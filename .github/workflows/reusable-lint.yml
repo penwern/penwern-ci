@@ -43,7 +43,7 @@ jobs:
       - name: Install golangci-lint (pinned, install only — lint-entry runs it)
         if: inputs.language == 'go'
         run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh \
+          curl -sSfL "https://raw.githubusercontent.com/golangci/golangci-lint/${GOLANGCI_VERSION}/install.sh" \
             | sh -s -- -b "$(go env GOPATH)/bin" "${GOLANGCI_VERSION}"
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
