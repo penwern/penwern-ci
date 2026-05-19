@@ -5,7 +5,8 @@ set -u
 . "$(dirname "$0")/lib.sh"
 
 repo="${1:?usage: resolve-mode.sh <repo-slug>}"
-reg="$PENWERN_CI_ROOT/registry.tsv"
+# PENWERN_REGISTRY lets tests point at an alternate registry without disturbing config resolution.
+reg="${PENWERN_REGISTRY:-$PENWERN_CI_ROOT/registry.tsv}"
 [ -f "$reg" ] || die "registry.tsv not found at $reg" 2
 
 line="$(grep -v '^#' "$reg" | awk -F'\t' -v r="$repo" '$1==r {print; exit}')"
