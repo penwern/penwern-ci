@@ -1,2 +1,4 @@
 *.tmp
 .DS_Store
+fixtures/go-dirty/godirty
+fixtures/**/*.test
