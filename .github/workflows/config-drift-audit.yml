@@ -1,0 +1,47 @@
+name: config-drift-audit
+on:
+  schedule:
+    - cron: '0 6 * * 1'   # Mondays 06:00 UTC (near the Dependabot weekly cadence)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout penwern-ci
+        uses: actions/checkout@v6
+
+      - name: Audit each registered Go repo for config drift
+        env:
+          GH_TOKEN: ${{ secrets.PENWERN_CI_TOKEN }}
+        run: |
+          export PENWERN_CI_ROOT="$PWD"
+          rc=0
+          clone_ok=0
+          clone_attempted=0
+          while IFS=$'\t' read -r repo lang mode owner || [ -n "$repo" ]; do
+            case "$repo" in '#'*|'') continue;; esac
+            [ "$lang" = "go" ] || continue
+            clone_attempted=$((clone_attempted + 1))
+            tmp="$(mktemp -d)"
+            if ! gh repo clone "penwern/$repo" "$tmp" -- --depth 1 -q; then
+              echo "::warning::could not clone penwern/$repo"
+              continue
+            fi
+            clone_ok=$((clone_ok + 1))
+            if bash scripts/check-drift.sh "$repo" "$tmp"; then
+              echo "::notice::$repo config in sync"
+            else
+              echo "::error::config drift in $repo"
+              rc=1
+            fi
+          done < registry.tsv
+          if [ "$clone_attempted" -gt 0 ] && [ "$clone_ok" -eq 0 ]; then
+            echo "::error::all $clone_attempted clone(s) failed — PENWERN_CI_TOKEN may be missing or expired; audit is VOID"
+            exit 2
+          fi
+          exit $rc
