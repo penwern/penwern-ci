@@ -1,0 +1,68 @@
+name: reusable-lint
+on:
+  workflow_call:
+    inputs:
+      language:
+        required: true
+        type: string
+    secrets:
+      PENWERN_CI_TOKEN:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout caller repo
+        uses: actions/checkout@v6
+        with:
+          path: target
+
+      - name: Checkout penwern-ci
+        uses: actions/checkout@v6
+        with:
+          repository: penwern/penwern-ci
+          ref: v1
+          path: penwern-ci
+          token: ${{ secrets.PENWERN_CI_TOKEN }}
+
+      - name: Read pinned tool versions
+        run: cat penwern-ci/configs/tool-versions.env >> "$GITHUB_ENV"
+
+      - name: Set up Go
+        if: inputs.language == 'go'
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: target/go.mod
+          cache: false
+
+      - name: Install golangci-lint (pinned, install only — lint-entry runs it)
+        if: inputs.language == 'go'
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh \
+            | sh -s -- -b "$(go env GOPATH)/bin" "${GOLANGCI_VERSION}"
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Set up Python
+        if: inputs.language == 'python'
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install ruff (pinned)
+        if: inputs.language == 'python'
+        run: pip install "ruff==${RUFF_VERSION}"
+
+      - name: Lint (mode resolved centrally from penwern-ci/registry.tsv)
+        env:
+          LANGUAGE: ${{ inputs.language }}
+        run: |
+          export PENWERN_CI_ROOT="$GITHUB_WORKSPACE/penwern-ci"
+          bash "$GITHUB_WORKSPACE/penwern-ci/scripts/lint-entry.sh" \
+            "${GITHUB_REPOSITORY##*/}" \
+            "${LANGUAGE}" \
+            "$GITHUB_WORKSPACE/target"
