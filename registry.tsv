@@ -1,0 +1,4 @@
+# repo	language	mode	owner
+curate-preservation-core	go	gate	platform
+curate-preservation-api	go	gate	platform
+curate-event-watcher	go	advisory	platform
