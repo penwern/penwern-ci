@@ -6,7 +6,9 @@ on:
         required: true
         type: string
     secrets:
-      PENWERN_CI_TOKEN:
+      PENWERN_CI_APP_CLIENT_ID:
+        required: true
+      PENWERN_CI_APP_PRIVATE_KEY:
         required: true
 
 permissions:
@@ -22,13 +24,23 @@ jobs:
         with:
           path: target
 
+      - name: Mint penwern-ci read token
+        id: app_token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.PENWERN_CI_APP_CLIENT_ID }}
+          private-key: ${{ secrets.PENWERN_CI_APP_PRIVATE_KEY }}
+          owner: penwern
+          repositories: penwern-ci
+          permission-contents: read
+
       - name: Checkout penwern-ci
         uses: actions/checkout@v6
         with:
           repository: penwern/penwern-ci
           ref: v1
           path: penwern-ci
-          token: ${{ secrets.PENWERN_CI_TOKEN }}
+          token: ${{ steps.app_token.outputs.token }}
 
       - name: Read pinned tool versions
         run: cat penwern-ci/configs/tool-versions.env >> "$GITHUB_ENV"

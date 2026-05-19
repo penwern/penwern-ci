@@ -15,9 +15,18 @@ jobs:
       - name: Checkout penwern-ci
         uses: actions/checkout@v6
 
+      - name: Mint cross-repo read token
+        id: app_token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.PENWERN_CI_APP_CLIENT_ID }}
+          private-key: ${{ secrets.PENWERN_CI_APP_PRIVATE_KEY }}
+          owner: penwern
+          permission-contents: read
+
       - name: Audit each registered Go repo for config drift
         env:
-          GH_TOKEN: ${{ secrets.PENWERN_CI_TOKEN }}
+          GH_TOKEN: ${{ steps.app_token.outputs.token }}
         run: |
           export PENWERN_CI_ROOT="$PWD"
           rc=0
@@ -41,7 +50,7 @@ jobs:
             fi
           done < registry.tsv
           if [ "$clone_attempted" -gt 0 ] && [ "$clone_ok" -eq 0 ]; then
-            echo "::error::all $clone_attempted clone(s) failed — PENWERN_CI_TOKEN may be missing or expired; audit is VOID"
+            echo "::error::all $clone_attempted clone(s) failed — GitHub App token may be missing or invalid; audit is VOID"
             exit 2
           fi
           exit $rc
