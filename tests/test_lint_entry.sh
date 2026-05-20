@@ -81,3 +81,53 @@ printf 'def x():\n    pass\n' > "$_brk_py/app.py"
 printf '[tool.ruff.lint]\nselect = ["NOT_A_REAL_RULE_XYZ"]\n' > "$_brk_py/pyproject.toml"
 PENWERN_REGISTRY="$_py_reg" bash scripts/lint-entry.sh py-clean-adv python "$_brk_py" >/tmp/le_py6.out 2>&1; ec=$?
 assert_exit "$ec" 2 "lint-entry py: advisory + broken ruff config = infra exit 2 (not softened)"
+
+# ---------------------------------------------------------------------------
+# §6 JS assertions — shape/dispatch only; no real npm ci required.
+# Runtime npm-ci/eslint assertions are deferred to the first js PR's CI —
+# analogous to Python's PR #41 first-run validation.
+# ---------------------------------------------------------------------------
+_js_reg="$(mktmp)/js-reg.tsv"
+printf '# repo\tlanguage\tmode\towner\n'             > "$_js_reg"
+printf 'js-vani-adv\tjs-vanilla\tadvisory\tt\n'     >> "$_js_reg"
+printf 'js-vani-gate\tjs-vanilla\tgate\tt\n'        >> "$_js_reg"
+printf 'js-next-adv\tjs-next\tadvisory\tt\n'        >> "$_js_reg"
+printf 'js-next-gate\tjs-next\tgate\tt\n'           >> "$_js_reg"
+printf 'js-vani-infra\tjs-vanilla\tadvisory\tt\n'   >> "$_js_reg"
+printf 'js-next-infra\tjs-next\tadvisory\tt\n'      >> "$_js_reg"
+
+_lejs() { PENWERN_REGISTRY="$_js_reg" bash scripts/lint-entry.sh "$@"; }
+
+# 1. advisory + js-vanilla + missing repo-root -> exit 2 (infra fails loud even in advisory)
+_lejs js-vani-adv js-vanilla fixtures/js-does-not-exist >/tmp/le_js1.out 2>&1; ec=$?
+assert_exit "$ec" 2 "lint-entry js-vanilla: missing repo-root exits 2 even in advisory (spec §6)"
+
+# 2. advisory + js-vanilla + dir with no package.json -> exit 2
+_js_nopkg="$(mktmp)"
+_lejs js-vani-adv js-vanilla "$_js_nopkg" >/tmp/le_js2.out 2>&1; ec=$?
+assert_exit "$ec" 2 "lint-entry js-vanilla: missing package.json exits 2 even in advisory"
+
+# 3. gate + js-vanilla + missing repo-root -> exit 2 (infra always loud)
+_lejs js-vani-gate js-vanilla fixtures/js-does-not-exist >/tmp/le_js3.out 2>&1; ec=$?
+assert_exit "$ec" 2 "lint-entry js-vanilla: gate + missing repo-root exits 2"
+
+# 4. unknown slug -> exit 3
+_lejs js-not-registered js-vanilla fixtures/js-vanilla-clean >/tmp/le_js4.out 2>&1; ec=$?
+assert_exit "$ec" 3 "lint-entry js-vanilla: unknown slug exits 3"
+
+# 5. advisory + js-next + missing repo-root -> exit 2
+_lejs js-next-adv js-next fixtures/js-does-not-exist >/tmp/le_js5.out 2>&1; ec=$?
+assert_exit "$ec" 2 "lint-entry js-next: missing repo-root exits 2 even in advisory (spec §6)"
+
+# 6. advisory + js-next + dir with no package.json -> exit 2
+_js_nopkg2="$(mktmp)"
+_lejs js-next-adv js-next "$_js_nopkg2" >/tmp/le_js6.out 2>&1; ec=$?
+assert_exit "$ec" 2 "lint-entry js-next: missing package.json exits 2 even in advisory"
+
+# 7. gate + js-next + missing repo-root -> exit 2
+_lejs js-next-gate js-next fixtures/js-does-not-exist >/tmp/le_js7.out 2>&1; ec=$?
+assert_exit "$ec" 2 "lint-entry js-next: gate + missing repo-root exits 2"
+
+# 8. unknown slug for js-next -> exit 3
+_lejs js-not-registered js-next fixtures/js-next-clean >/tmp/le_js8.out 2>&1; ec=$?
+assert_exit "$ec" 3 "lint-entry js-next: unknown slug exits 3"

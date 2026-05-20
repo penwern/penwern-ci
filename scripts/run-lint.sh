@@ -28,6 +28,19 @@ case "$lang" in
     { [ "$rc_check" -eq 1 ] || [ "$rc_fmt" -eq 1 ]; } && exit 1
     exit 0
     ;;
+  js-next|js-vanilla)
+    [ -f "$root/package.json" ] || die "missing package.json in $root" 2
+    ( cd "$root" && npm ci ) || die "npm ci failed in $root" 2
+    rc_eslint=0
+    ( cd "$root" && npx --no-install eslint . ) || rc_eslint=$?
+    rc_prettier=0
+    ( cd "$root" && npx --no-install prettier --check . ) || rc_prettier=$?
+    # Map: rc 0 clean / 1 findings / >=2 infra
+    [ "$rc_eslint" -ge 2 ] && die "eslint crashed (rc=$rc_eslint)" 2
+    [ "$rc_prettier" -ge 2 ] && die "prettier crashed (rc=$rc_prettier)" 2
+    if [ "$rc_eslint" -eq 1 ] || [ "$rc_prettier" -eq 1 ]; then exit 1; fi
+    exit 0
+    ;;
   *)
     die "unsupported language '$lang'" 2
     ;;

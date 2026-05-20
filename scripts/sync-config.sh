@@ -85,6 +85,82 @@ case "$lang" in
     exit 0
     ;;
 
+  js-vanilla|js-next)
+    if [ "$lang" = "js-vanilla" ]; then
+      src_eslint="$PENWERN_CI_ROOT/configs/eslint.vanilla.mjs"
+    else
+      src_eslint="$PENWERN_CI_ROOT/configs/eslint.next.mjs"
+    fi
+    src_prettier="$PENWERN_CI_ROOT/configs/prettierrc.json"
+    [ -f "$src_eslint" ]   || die "canonical config missing: $src_eslint" 2
+    [ -f "$src_prettier" ] || die "canonical config missing: $src_prettier" 2
+    dst_eslint="$target/eslint.config.mjs"
+    dst_prettier="$target/.prettierrc.json"
+
+    if [ "$check" -eq 1 ]; then
+      # --check: absent config = exit 2; differ = exit 1; both in sync = exit 0
+      if [ ! -f "$dst_eslint" ] || [ ! -f "$dst_prettier" ]; then
+        log "DRIFT: one or both JS config files absent from $target (config-absent is drift)"
+        exit 2
+      fi
+      drift=0
+      if ! diff -q "$src_eslint" "$dst_eslint" >/dev/null 2>&1; then
+        log "DRIFT: $dst_eslint differs from canonical $src_eslint"
+        diff -u "$dst_eslint" "$src_eslint" 2>/dev/null || true
+        drift=1
+      fi
+      if ! diff -q "$src_prettier" "$dst_prettier" >/dev/null 2>&1; then
+        log "DRIFT: $dst_prettier differs from canonical $src_prettier"
+        diff -u "$dst_prettier" "$src_prettier" 2>/dev/null || true
+        drift=1
+      fi
+      if [ "$drift" -eq 0 ]; then
+        log "in sync: $slug"
+        exit 0
+      fi
+      exit 1
+    fi
+
+    # Write mode
+    eslint_present=0; prettier_present=0
+    [ -f "$dst_eslint" ]   && eslint_present=1
+    [ -f "$dst_prettier" ] && prettier_present=1
+
+    if [ "$eslint_present" -eq 0 ] && [ "$prettier_present" -eq 0 ]; then
+      # Greenfield: write both
+      cp "$src_eslint"   "$dst_eslint"   || die "failed to write $dst_eslint from $src_eslint" 2
+      cp "$src_prettier" "$dst_prettier" || die "failed to write $dst_prettier from $src_prettier" 2
+      log "wrote eslint.config.mjs + .prettierrc.json from canonical (greenfield)"
+      exit 0
+    fi
+
+    # One or both exist — check for drift and refuse if differs
+    eslint_ok=1; prettier_ok=1
+    [ "$eslint_present" -eq 1 ] && ! diff -q "$src_eslint" "$dst_eslint" >/dev/null 2>&1 && eslint_ok=0
+    [ "$prettier_present" -eq 1 ] && ! diff -q "$src_prettier" "$dst_prettier" >/dev/null 2>&1 && prettier_ok=0
+
+    if [ "$eslint_ok" -eq 0 ]; then
+      die "eslint.config.mjs already exists and differs from canonical; reconcile by hand (canonical at configs/eslint.${lang#js-}.mjs)" 2
+    fi
+    if [ "$prettier_ok" -eq 0 ]; then
+      die ".prettierrc.json already exists and differs from canonical; reconcile by hand (canonical at configs/prettierrc.json)" 2
+    fi
+
+    # Both in sync (or one absent but no drift on the existing one — handle missing half)
+    if [ "$eslint_present" -eq 0 ]; then
+      cp "$src_eslint" "$dst_eslint" || die "failed to write $dst_eslint from $src_eslint" 2
+      log "wrote eslint.config.mjs from canonical (was missing)"
+    fi
+    if [ "$prettier_present" -eq 0 ]; then
+      cp "$src_prettier" "$dst_prettier" || die "failed to write $dst_prettier from $src_prettier" 2
+      log "wrote .prettierrc.json from canonical (was missing)"
+    fi
+    if [ "$eslint_present" -eq 1 ] && [ "$prettier_present" -eq 1 ]; then
+      log "already in sync: $slug"
+    fi
+    exit 0
+    ;;
+
   *)
     die "sync not implemented for language '$lang' (engine is pluggable; add an arm)" 2
     ;;

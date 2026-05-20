@@ -71,7 +71,38 @@ jobs:
                   rm -f "$extracted" "$canonical_stripped"
                 fi
                 ;;
-              # TODO: Phases 3-4
+              js-vanilla|js-next)
+                if [ "$lang" = "js-vanilla" ]; then
+                  canonical_eslint="$PENWERN_CI_ROOT/configs/eslint.vanilla.mjs"
+                else
+                  canonical_eslint="$PENWERN_CI_ROOT/configs/eslint.next.mjs"
+                fi
+                canonical_prettier="$PENWERN_CI_ROOT/configs/prettierrc.json"
+                repo_eslint="$tmp/eslint.config.mjs"
+                repo_prettier="$tmp/.prettierrc.json"
+                if [ ! -f "$repo_eslint" ] || [ ! -f "$repo_prettier" ]; then
+                  echo "::error::config drift in $repo — eslint.config.mjs or .prettierrc.json absent"
+                  rc=1
+                else
+                  drift_js=0
+                  if ! cmp -s "$repo_eslint" "$canonical_eslint"; then
+                    echo "::error::config drift in $repo — eslint.config.mjs differs from canonical"
+                    diff -u "$repo_eslint" "$canonical_eslint" || true
+                    drift_js=1
+                  fi
+                  if ! cmp -s "$repo_prettier" "$canonical_prettier"; then
+                    echo "::error::config drift in $repo — .prettierrc.json differs from canonical"
+                    diff -u "$repo_prettier" "$canonical_prettier" || true
+                    drift_js=1
+                  fi
+                  if [ "$drift_js" -eq 0 ]; then
+                    echo "::notice::$repo config in sync"
+                  else
+                    rc=1
+                  fi
+                fi
+                ;;
+              # TODO: Phase 4+
               *)
                 echo "::warning::drift audit not yet implemented for lang=$lang ($repo)"
                 continue

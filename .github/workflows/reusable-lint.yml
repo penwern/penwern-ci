@@ -69,6 +69,14 @@ jobs:
         if: inputs.language == 'python'
         run: pip install "ruff==${RUFF_VERSION}"
 
+      - name: Set up Node
+        if: startsWith(inputs.language, 'js-')
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: target/package-lock.json
+
       - name: Lint (mode resolved centrally from penwern-ci/registry.tsv)
         env:
           LANGUAGE: ${{ inputs.language }}
