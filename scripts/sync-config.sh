@@ -161,6 +161,78 @@ case "$lang" in
     exit 0
     ;;
 
+  ansible)
+    src_ansible_lint="$PENWERN_CI_ROOT/configs/ansible-lint.yml"
+    src_yamllint="$PENWERN_CI_ROOT/configs/yamllint.yml"
+    [ -f "$src_ansible_lint" ] || die "canonical config missing: $src_ansible_lint" 2
+    [ -f "$src_yamllint" ]     || die "canonical config missing: $src_yamllint" 2
+    dst_ansible_lint="$target/.ansible-lint"
+    dst_yamllint="$target/.yamllint"
+
+    if [ "$check" -eq 1 ]; then
+      # --check: absent → exit 2; differ → exit 1 with diff; both in-sync → exit 0
+      if [ ! -f "$dst_ansible_lint" ] || [ ! -f "$dst_yamllint" ]; then
+        log "DRIFT: one or both ansible config files absent from $target (config-absent is drift)"
+        exit 2
+      fi
+      drift=0
+      if ! diff -q "$src_ansible_lint" "$dst_ansible_lint" >/dev/null 2>&1; then
+        log "DRIFT: $dst_ansible_lint differs from canonical $src_ansible_lint"
+        diff -u "$dst_ansible_lint" "$src_ansible_lint" 2>/dev/null || true
+        drift=1
+      fi
+      if ! diff -q "$src_yamllint" "$dst_yamllint" >/dev/null 2>&1; then
+        log "DRIFT: $dst_yamllint differs from canonical $src_yamllint"
+        diff -u "$dst_yamllint" "$src_yamllint" 2>/dev/null || true
+        drift=1
+      fi
+      if [ "$drift" -eq 0 ]; then
+        log "in sync: $slug"
+        exit 0
+      fi
+      exit 1
+    fi
+
+    # Write mode
+    ansible_lint_present=0; yamllint_present=0
+    [ -f "$dst_ansible_lint" ] && ansible_lint_present=1
+    [ -f "$dst_yamllint" ]     && yamllint_present=1
+
+    if [ "$ansible_lint_present" -eq 0 ] && [ "$yamllint_present" -eq 0 ]; then
+      # Greenfield: write both
+      cp "$src_ansible_lint" "$dst_ansible_lint" || die "failed to write $dst_ansible_lint from $src_ansible_lint" 2
+      cp "$src_yamllint"     "$dst_yamllint"     || die "failed to write $dst_yamllint from $src_yamllint" 2
+      log "wrote .ansible-lint + .yamllint from canonical (greenfield)"
+      exit 0
+    fi
+
+    # One or both exist — check for drift and refuse if differs
+    ansible_lint_ok=1; yamllint_ok=1
+    [ "$ansible_lint_present" -eq 1 ] && ! diff -q "$src_ansible_lint" "$dst_ansible_lint" >/dev/null 2>&1 && ansible_lint_ok=0
+    [ "$yamllint_present" -eq 1 ]     && ! diff -q "$src_yamllint" "$dst_yamllint" >/dev/null 2>&1         && yamllint_ok=0
+
+    if [ "$ansible_lint_ok" -eq 0 ]; then
+      die ".ansible-lint already exists and differs from canonical; reconcile by hand (canonical at configs/ansible-lint.yml)" 2
+    fi
+    if [ "$yamllint_ok" -eq 0 ]; then
+      die ".yamllint already exists and differs from canonical; reconcile by hand (canonical at configs/yamllint.yml)" 2
+    fi
+
+    # Both in sync (or one absent but no drift on the existing one — handle missing half)
+    if [ "$ansible_lint_present" -eq 0 ]; then
+      cp "$src_ansible_lint" "$dst_ansible_lint" || die "failed to write $dst_ansible_lint from $src_ansible_lint" 2
+      log "wrote .ansible-lint from canonical (was missing)"
+    fi
+    if [ "$yamllint_present" -eq 0 ]; then
+      cp "$src_yamllint" "$dst_yamllint" || die "failed to write $dst_yamllint from $src_yamllint" 2
+      log "wrote .yamllint from canonical (was missing)"
+    fi
+    if [ "$ansible_lint_present" -eq 1 ] && [ "$yamllint_present" -eq 1 ]; then
+      log "already in sync: $slug"
+    fi
+    exit 0
+    ;;
+
   *)
     die "sync not implemented for language '$lang' (engine is pluggable; add an arm)" 2
     ;;

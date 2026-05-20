@@ -41,6 +41,17 @@ case "$lang" in
     if [ "$rc_eslint" -eq 1 ] || [ "$rc_prettier" -eq 1 ]; then exit 1; fi
     exit 0
     ;;
+  ansible)
+    command -v ansible-lint >/dev/null 2>&1 || die "ansible-lint not on PATH (workflow must pip-install at pinned version)" 2
+    rc=0
+    ( cd "$root" && ansible-lint . ) || rc=$?
+    # ansible-lint exit codes: 0 clean / 2 rule violations / 1 (or other) internal/config error.
+    case "$rc" in
+      0) exit 0 ;;
+      2) exit 1 ;;
+      *) die "ansible-lint failed (rc=$rc) — internal/config error" 2 ;;
+    esac
+    ;;
   *)
     die "unsupported language '$lang'" 2
     ;;

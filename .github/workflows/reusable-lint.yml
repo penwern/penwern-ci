@@ -60,14 +60,19 @@ jobs:
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
       - name: Set up Python
-        if: inputs.language == 'python'
+        if: inputs.language == 'python' || inputs.language == 'ansible'
         uses: actions/setup-python@v6
         with:
-          python-version: '3.11'
+          python-version: '3.12'
+          cache: 'pip'
 
       - name: Install ruff (pinned)
         if: inputs.language == 'python'
         run: pip install "ruff==${RUFF_VERSION}"
+
+      - name: Install ansible-lint (pinned)
+        if: inputs.language == 'ansible'
+        run: pip install "ansible-lint==${ANSIBLE_LINT_VERSION}"
 
       - name: Set up Node
         if: startsWith(inputs.language, 'js-')

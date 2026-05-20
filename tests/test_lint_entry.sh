@@ -131,3 +131,31 @@ assert_exit "$ec" 2 "lint-entry js-next: gate + missing repo-root exits 2"
 # 8. unknown slug for js-next -> exit 3
 _lejs js-not-registered js-next fixtures/js-next-clean >/tmp/le_js8.out 2>&1; ec=$?
 assert_exit "$ec" 3 "lint-entry js-next: unknown slug exits 3"
+
+# ---------------------------------------------------------------------------
+# §6 Ansible assertions — shape/dispatch only; no real ansible-lint required.
+# Runtime ansible-lint assertions are deferred to the first ansible PR's CI.
+# ---------------------------------------------------------------------------
+_ans_reg="$(mktmp)/ansible-reg.tsv"
+printf '# repo\tlanguage\tmode\towner\n'           > "$_ans_reg"
+printf 'ansible-adv\tansible\tadvisory\tt\n'      >> "$_ans_reg"
+printf 'ansible-gate\tansible\tgate\tt\n'         >> "$_ans_reg"
+printf 'ansible-infra-adv\tansible\tadvisory\tt\n' >> "$_ans_reg"
+
+_leans() { PENWERN_REGISTRY="$_ans_reg" bash scripts/lint-entry.sh "$@"; }
+
+# 1. advisory + ansible + missing repo-root -> exit 2 (infra fails loud even in advisory)
+_leans ansible-adv ansible fixtures/ansible-does-not-exist >/tmp/le_ans1.out 2>&1; ec=$?
+assert_exit "$ec" 2 "lint-entry ansible: missing repo-root exits 2 even in advisory (spec §6)"
+
+# 2. gate + ansible + missing repo-root -> exit 2 (infra always loud)
+_leans ansible-gate ansible fixtures/ansible-does-not-exist >/tmp/le_ans2.out 2>&1; ec=$?
+assert_exit "$ec" 2 "lint-entry ansible: gate + missing repo-root exits 2"
+
+# 3. unknown slug -> exit 3
+_leans ansible-not-registered ansible fixtures/ansible-clean >/tmp/le_ans3.out 2>&1; ec=$?
+assert_exit "$ec" 3 "lint-entry ansible: unknown slug exits 3"
+
+# 4. infra-adv + missing repo-root -> exit 2 (double-check advisory does not mask §6 infra)
+_leans ansible-infra-adv ansible fixtures/ansible-does-not-exist >/tmp/le_ans4.out 2>&1; ec=$?
+assert_exit "$ec" 2 "lint-entry ansible: advisory + missing repo-root exits 2 (§6 invariant)"

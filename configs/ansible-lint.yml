@@ -1,0 +1,11 @@
+---
+exclude_paths:
+  - roles/geerlingguy.certbot/
+  - roles/geerlingguy.clamav/
+  - roles/geerlingguy.docker/
+  - roles/geerlingguy.mysql/
+  - roles/geerlingguy.nginx/
+  - roles/geerlingguy.node_exporter/
+
+skip_list:
+  - yaml[line-length]

@@ -200,3 +200,65 @@ assert_contains "$(cat /tmp/jsn_sc5.out)" "DRIFT" "js-next check: drift output m
 _jsn_chkab="$(mktmp)"
 _jssync js-next-chk-ab "$_jsn_chkab" --check >/tmp/jsn_sc6.out 2>&1; ec=$?
 assert_exit "$ec" 2 "js-next check: config-absent exits 2"
+
+# ---------------------------------------------------------------------------
+# Ansible arm tests — isolated temp registry
+# ---------------------------------------------------------------------------
+_ansreg() {
+  local f; f="$(mktmp)/ansible-sync-reg.tsv"
+  printf '# repo\tlanguage\tmode\towner\n' > "$f"
+  printf 'ansible-sync-greenfield\tansible\tadvisory\tplatform\n' >> "$f"
+  printf 'ansible-sync-insync\tansible\tadvisory\tplatform\n'     >> "$f"
+  printf 'ansible-sync-drift\tansible\tadvisory\tplatform\n'      >> "$f"
+  printf 'ansible-check-clean\tansible\tadvisory\tplatform\n'     >> "$f"
+  printf 'ansible-check-drift\tansible\tadvisory\tplatform\n'     >> "$f"
+  printf 'ansible-check-absent\tansible\tadvisory\tplatform\n'    >> "$f"
+  echo "$f"
+}
+_ANSREG="$(_ansreg)"
+_anssync() { PENWERN_REGISTRY="$_ANSREG" bash scripts/sync-config.sh "$@"; }
+
+# 1. greenfield: no .ansible-lint or .yamllint — sync creates both byte-identical to canonical
+_ans_gf="$(mktmp)"
+_anssync ansible-sync-greenfield "$_ans_gf" >/tmp/ans_sc1.out 2>&1; ec=$?
+assert_exit "$ec" 0 "ansible sync: greenfield exits 0"
+assert_exit "$([ -f "$_ans_gf/.ansible-lint" ] && echo 0 || echo 1)" 0 "ansible sync: greenfield creates .ansible-lint"
+assert_exit "$([ -f "$_ans_gf/.yamllint" ] && echo 0 || echo 1)" 0 "ansible sync: greenfield creates .yamllint"
+assert_eq "$(diff -q configs/ansible-lint.yml "$_ans_gf/.ansible-lint" >/dev/null; echo $?)" "0" "ansible sync: greenfield .ansible-lint matches canonical"
+assert_eq "$(diff -q configs/yamllint.yml "$_ans_gf/.yamllint" >/dev/null; echo $?)" "0" "ansible sync: greenfield .yamllint matches canonical"
+
+# 2. already in sync: idempotent, exit 0
+_ans_ins="$(mktmp)"
+cp configs/ansible-lint.yml "$_ans_ins/.ansible-lint"
+cp configs/yamllint.yml     "$_ans_ins/.yamllint"
+_anssync ansible-sync-insync "$_ans_ins" >/tmp/ans_sc2.out 2>&1; ec=$?
+assert_exit "$ec" 0 "ansible sync: already-in-sync exits 0"
+
+# 3. drift in .ansible-lint: refuses with exit 2
+_ans_dr="$(mktmp)"
+cp configs/ansible-lint.yml "$_ans_dr/.ansible-lint"
+cp configs/yamllint.yml     "$_ans_dr/.yamllint"
+printf '\n# drift\n' >> "$_ans_dr/.ansible-lint"
+_anssync ansible-sync-drift "$_ans_dr" >/tmp/ans_sc3.out 2>&1; ec=$?
+assert_exit "$ec" 2 "ansible sync: drift in .ansible-lint refuses with exit 2"
+
+# 4. --check in-sync: exit 0
+_ans_chkok="$(mktmp)"
+cp configs/ansible-lint.yml "$_ans_chkok/.ansible-lint"
+cp configs/yamllint.yml     "$_ans_chkok/.yamllint"
+_anssync ansible-check-clean "$_ans_chkok" --check >/tmp/ans_sc4.out 2>&1; ec=$?
+assert_exit "$ec" 0 "ansible check: in-sync exits 0"
+
+# 5. --check drift: exit 1 with diff output
+_ans_chkdr="$(mktmp)"
+cp configs/ansible-lint.yml "$_ans_chkdr/.ansible-lint"
+cp configs/yamllint.yml     "$_ans_chkdr/.yamllint"
+printf '\n# drift\n' >> "$_ans_chkdr/.yamllint"
+_anssync ansible-check-drift "$_ans_chkdr" --check >/tmp/ans_sc5.out 2>&1; ec=$?
+assert_exit "$ec" 1 "ansible check: drift exits 1"
+assert_contains "$(cat /tmp/ans_sc5.out)" "DRIFT" "ansible check: drift output mentions DRIFT"
+
+# 6. --check config-absent: exit 2
+_ans_chkab="$(mktmp)"
+_anssync ansible-check-absent "$_ans_chkab" --check >/tmp/ans_sc6.out 2>&1; ec=$?
+assert_exit "$ec" 2 "ansible check: config-absent exits 2"

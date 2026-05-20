@@ -12,3 +12,4 @@ sharepoint-python-server	python	advisory	platform
 curate-manager	python	advisory	platform
 curate-dev-js	js-vanilla	advisory	platform
 penwern-website	js-next	advisory	platform
+curate-ansible-deployment	ansible	advisory	platform

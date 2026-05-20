@@ -102,7 +102,33 @@ jobs:
                   fi
                 fi
                 ;;
-              # TODO: Phase 4+
+              ansible)
+                canonical_ansible_lint="$PENWERN_CI_ROOT/configs/ansible-lint.yml"
+                canonical_yamllint="$PENWERN_CI_ROOT/configs/yamllint.yml"
+                repo_ansible_lint="$tmp/.ansible-lint"
+                repo_yamllint="$tmp/.yamllint"
+                if [ ! -f "$repo_ansible_lint" ] || [ ! -f "$repo_yamllint" ]; then
+                  echo "::error::config drift in $repo — .ansible-lint or .yamllint absent"
+                  rc=1
+                else
+                  drift_ansible=0
+                  if ! cmp -s "$repo_ansible_lint" "$canonical_ansible_lint"; then
+                    echo "::error::config drift in $repo — .ansible-lint differs from canonical"
+                    diff -u "$repo_ansible_lint" "$canonical_ansible_lint" || true
+                    drift_ansible=1
+                  fi
+                  if ! cmp -s "$repo_yamllint" "$canonical_yamllint"; then
+                    echo "::error::config drift in $repo — .yamllint differs from canonical"
+                    diff -u "$repo_yamllint" "$canonical_yamllint" || true
+                    drift_ansible=1
+                  fi
+                  if [ "$drift_ansible" -eq 0 ]; then
+                    echo "::notice::$repo config in sync"
+                  else
+                    rc=1
+                  fi
+                fi
+                ;;
               *)
                 echo "::warning::drift audit not yet implemented for lang=$lang ($repo)"
                 continue
