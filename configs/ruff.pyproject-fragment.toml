@@ -1,7 +1,7 @@
 # Canonical [tool.ruff] block — copied verbatim into each Python repo's pyproject.toml.
 # WARNING: do NOT cat-append this to a pyproject.toml that already defines [tool.ruff] (e.g. penwern-a3m) — duplicate TOML tables are invalid. Merge with a TOML-aware tool or by hand.
 [tool.ruff]
-target-version = "py38"
+target-version = "py310"          # bumped from py38 2026-05-20: all onboarded repos deploy to Ubuntu 22.04+ = Python 3.10+; unlocks UP006/UP007 auto-fix
 line-length = 100
 
 [tool.ruff.lint]
