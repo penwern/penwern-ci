@@ -43,3 +43,41 @@ printf '# repo\tlanguage\tmode\towner\n' > "$_bad_reg"
 printf 'bad-mode\tgo\tgarbage\tt\n' >> "$_bad_reg"
 PENWERN_REGISTRY="$_bad_reg" bash scripts/lint-entry.sh bad-mode go fixtures/go-clean >/tmp/le7.out 2>&1; ec=$?
 assert_exit "$ec" 4 "lint-entry: invalid mode propagates exit 4"
+
+# §6 Python assertions — isolated temp registry (slugs unique from Go slugs above)
+_py_reg="$(mktmp)/py-reg.tsv"
+printf '# repo\tlanguage\tmode\towner\n'  > "$_py_reg"
+printf 'py-clean-adv\tpython\tadvisory\tt\n' >> "$_py_reg"
+printf 'py-clean-gate\tpython\tgate\tt\n'    >> "$_py_reg"
+printf 'py-dirty-adv\tpython\tadvisory\tt\n' >> "$_py_reg"
+printf 'py-dirty-gate\tpython\tgate\tt\n'    >> "$_py_reg"
+printf 'py-infra-adv\tpython\tadvisory\tt\n' >> "$_py_reg"
+
+_lepy() { PENWERN_REGISTRY="$_py_reg" bash scripts/lint-entry.sh "$@"; }
+
+# 1. advisory + py-dirty -> findings softened, exit 0
+_lepy py-dirty-adv python fixtures/py-dirty >/tmp/le_py1.out 2>&1; ec=$?
+assert_exit "$ec" 0 "lint-entry py: advisory softens dirty findings to exit 0"
+
+# 2. gate + py-dirty -> exit 1
+_lepy py-dirty-gate python fixtures/py-dirty >/tmp/le_py2.out 2>&1; ec=$?
+assert_exit "$ec" 1 "lint-entry py: gate fails on dirty findings"
+
+# 3. advisory + py-clean -> exit 0
+_lepy py-clean-adv python fixtures/py-clean >/tmp/le_py3.out 2>&1; ec=$?
+assert_exit "$ec" 0 "lint-entry py: advisory clean passes"
+
+# 4. gate + py-clean -> exit 0
+_lepy py-clean-gate python fixtures/py-clean >/tmp/le_py4.out 2>&1; ec=$?
+assert_exit "$ec" 0 "lint-entry py: gate clean passes"
+
+# 5. §6 invariant: advisory + missing repo-root -> exit 2 (infra fails loud even in advisory)
+_lepy py-infra-adv python fixtures/py-does-not-exist >/tmp/le_py5.out 2>&1; ec=$?
+assert_exit "$ec" 2 "lint-entry py: missing repo-root exits 2 even in advisory (spec §6)"
+
+# 6. advisory + broken pyproject.toml (unknown rule selector -> ruff config error) -> exit 2
+_brk_py="$(mktmp)"
+printf 'def x():\n    pass\n' > "$_brk_py/app.py"
+printf '[tool.ruff.lint]\nselect = ["NOT_A_REAL_RULE_XYZ"]\n' > "$_brk_py/pyproject.toml"
+PENWERN_REGISTRY="$_py_reg" bash scripts/lint-entry.sh py-clean-adv python "$_brk_py" >/tmp/le_py6.out 2>&1; ec=$?
+assert_exit "$ec" 2 "lint-entry py: advisory + broken ruff config = infra exit 2 (not softened)"

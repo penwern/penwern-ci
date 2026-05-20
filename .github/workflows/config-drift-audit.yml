@@ -24,7 +24,7 @@ jobs:
           owner: penwern
           permission-contents: read
 
-      - name: Audit each registered Go repo for config drift
+      - name: Audit each registered repo for config drift
         env:
           GH_TOKEN: ${{ steps.app_token.outputs.token }}
         run: |
@@ -34,7 +34,6 @@ jobs:
           clone_attempted=0
           while IFS=$'\t' read -r repo lang mode owner || [ -n "$repo" ]; do
             case "$repo" in '#'*|'') continue;; esac
-            [ "$lang" = "go" ] || continue
             clone_attempted=$((clone_attempted + 1))
             tmp="$(mktemp -d)"
             if ! gh repo clone "penwern/$repo" "$tmp" -- --depth 1 -q; then
@@ -42,12 +41,42 @@ jobs:
               continue
             fi
             clone_ok=$((clone_ok + 1))
-            if bash scripts/check-drift.sh "$repo" "$tmp"; then
-              echo "::notice::$repo config in sync"
-            else
-              echo "::error::config drift in $repo"
-              rc=1
-            fi
+            case "$lang" in
+              go)
+                if bash scripts/check-drift.sh "$repo" "$tmp"; then
+                  echo "::notice::$repo config in sync"
+                else
+                  echo "::error::config drift in $repo"
+                  rc=1
+                fi
+                ;;
+              python)
+                if [ ! -f "$tmp/pyproject.toml" ]; then
+                  echo "::error::config drift in $repo — pyproject.toml absent (config missing entirely)"
+                  rc=1
+                else
+                  extracted="$(mktemp)"
+                  awk '/^\[tool\.ruff/{f=1} /^\[/ && !/^\[tool\.ruff/{f=0} f' "$tmp/pyproject.toml" > "$extracted"
+                  canonical="$PENWERN_CI_ROOT/configs/ruff.pyproject-fragment.toml"
+                  # Strip the leading comment lines from the canonical fragment before diffing
+                  canonical_stripped="$(mktemp)"
+                  sed -n '/^\[tool\.ruff/,$p' "$canonical" > "$canonical_stripped"
+                  if diff -u "$extracted" "$canonical_stripped" > /tmp/drift-diff-"$repo".out 2>&1; then
+                    echo "::notice::$repo config in sync"
+                  else
+                    echo "::error::config drift in $repo"
+                    cat /tmp/drift-diff-"$repo".out
+                    rc=1
+                  fi
+                  rm -f "$extracted" "$canonical_stripped"
+                fi
+                ;;
+              # TODO: Phases 3-4
+              *)
+                echo "::warning::drift audit not yet implemented for lang=$lang ($repo)"
+                continue
+                ;;
+            esac
           done < registry.tsv
           if [ "$clone_attempted" -gt 0 ] && [ "$clone_ok" -eq 0 ]; then
             echo "::error::all $clone_attempted clone(s) failed — GitHub App token may be missing or invalid; audit is VOID"
