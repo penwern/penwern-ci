@@ -39,12 +39,6 @@ export default [
   // Underscore-prefixed source files are conventional template/placeholder files
   // (Webpack and similar build tools skip them; they often contain placeholder syntax).
   {
-    ignores: [
-      "dist/**",
-      "build/**",
-      "node_modules/**",
-      "coverage/**",
-      "**/_*-template.js",
-    ],
+    ignores: ["dist/**", "build/**", "node_modules/**", "coverage/**", "**/_*-template.js"],
   },
 ];
