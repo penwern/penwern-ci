@@ -29,6 +29,6 @@ Flip the `mode` column for the repo in `registry.tsv` and commit here. No commit
 | curate-email-backend | python | gate | platform |
 | sharepoint-python-server | python | gate | platform |
 | curate-manager | python | gate | platform |
-| curate-dev-js | js-vanilla | advisory | platform |
+| curate-dev-js | js-vanilla | gate | platform |
 | penwern-website | js-next | gate | platform |
 | curate-ansible-deployment | ansible | advisory | platform |
