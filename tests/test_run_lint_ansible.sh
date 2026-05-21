@@ -1,9 +1,6 @@
 # shellcheck shell=bash
-# run-lint.sh ansible arm — shape/dispatch tests only.
-# Runtime ansible-lint assertions (clean/dirty fixture runs) are deferred to the
-# first ansible PR's CI, analogous to the JS phase deferral in test_run_lint_js.sh.
-# ansible-lint is not installed in the local dev environment and is pip-installed
-# at pinned version only inside the reusable-lint workflow.
+# run-lint.sh ansible arm — shape/dispatch tests plus runtime smoke tests
+# against fixtures when ansible-lint is locally installed.
 
 # bad language -> exit 2 (catches the unsupported-language fallback)
 bash scripts/run-lint.sh ansible-bad-lang /tmp >/tmp/rlans_bad.out 2>&1; ec=$?
@@ -28,3 +25,13 @@ _stripped_path="$(printf '%s' "$PATH" | tr ':' '\n' | grep -v "^${_ansible_bin_d
 PATH="$_stripped_path" bash scripts/run-lint.sh ansible "$_ans_root" >/tmp/rlans_nopath.out 2>&1; ec=$?
 assert_exit "$ec" 2 "run-lint ansible: ansible-lint not on PATH exits 2"
 assert_contains "$(cat /tmp/rlans_nopath.out)" "ansible-lint" "run-lint ansible: not-on-PATH message mentions ansible-lint"
+
+# Runtime smoke tests — only when ansible-lint is locally installed (skip otherwise)
+if command -v ansible-lint >/dev/null 2>&1; then
+  # Vault fixture: playbook references a vault-encrypted host_vars file. Without the
+  # dummy ANSIBLE_VAULT_PASSWORD_FILE stub in run-lint.sh, ansible-lint exits 2 (infra)
+  # complaining about missing vault credentials. With the stub, the encrypted content
+  # is treated as opaque-but-syntactically-valid and the lint passes.
+  PENWERN_CI_ROOT="$PWD" bash scripts/run-lint.sh ansible fixtures/ansible-vault-clean >/tmp/rlans_vault.out 2>&1; ec=$?
+  assert_exit "$ec" 0 "run-lint ansible: vault-encrypted host_vars do not crash the lint (stub provides dummy vault password)"
+fi

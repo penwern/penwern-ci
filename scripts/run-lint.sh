@@ -43,8 +43,16 @@ case "$lang" in
     ;;
   ansible)
     command -v ansible-lint >/dev/null 2>&1 || die "ansible-lint not on PATH (workflow must pip-install at pinned version)" 2
+    # Provide a dummy ANSIBLE_VAULT_PASSWORD_FILE so playbooks that reference vault-encrypted
+    # host_vars/group_vars can be syntax-checked. The contents won't actually be decryptable,
+    # but ansible only crashes when the password file is missing/empty — non-empty content
+    # turns the failed decrypt into a non-fatal warning. Overrides any ansible.cfg setting
+    # (env var has higher precedence) so workflow CI doesn't need real vault credentials.
+    _vault_pw="$(mktemp)" || die "failed to create dummy vault password file" 2
+    printf 'penwern-ci-lint-stub\n' > "$_vault_pw"
     rc=0
-    ( cd "$root" && ansible-lint . ) || rc=$?
+    ( cd "$root" && ANSIBLE_VAULT_PASSWORD_FILE="$_vault_pw" ansible-lint . ) || rc=$?
+    rm -f "$_vault_pw"
     # ansible-lint exit codes: 0 clean / 2 rule violations / 1 (or other) internal/config error.
     case "$rc" in
       0) exit 0 ;;
