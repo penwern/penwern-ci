@@ -31,4 +31,4 @@ Flip the `mode` column for the repo in `registry.tsv` and commit here. No commit
 | curate-manager | python | gate | platform |
 | curate-dev-js | js-vanilla | gate | platform |
 | penwern-website | js-next | gate | platform |
-| curate-ansible-deployment | ansible | advisory | platform |
+| curate-ansible-deployment | ansible | gate | platform |

@@ -12,4 +12,4 @@ sharepoint-python-server	python	gate	platform
 curate-manager	python	gate	platform
 curate-dev-js	js-vanilla	gate	platform
 penwern-website	js-next	gate	platform
-curate-ansible-deployment	ansible	advisory	platform
+curate-ansible-deployment	ansible	gate	platform
