@@ -22,6 +22,29 @@ export default [
       sourceType: "module",
       globals: { ...globals.browser, ...globals.node, ...pydioRuntimeGlobals },
     },
+    rules: {
+      // Universally-accepted "_" prefix convention for intentionally-unused identifiers
+      // (loop vars, callback params required by signature, destructured-but-skipped fields).
+      "no-unused-vars": [
+        "error",
+        {
+          varsIgnorePattern: "^_",
+          argsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+          destructuredArrayIgnorePattern: "^_",
+        },
+      ],
+    },
   },
-  { ignores: ["dist/**", "build/**", "node_modules/**", "coverage/**"] },
+  // Underscore-prefixed source files are conventional template/placeholder files
+  // (Webpack and similar build tools skip them; they often contain placeholder syntax).
+  {
+    ignores: [
+      "dist/**",
+      "build/**",
+      "node_modules/**",
+      "coverage/**",
+      "**/_*-template.js",
+    ],
+  },
 ];
