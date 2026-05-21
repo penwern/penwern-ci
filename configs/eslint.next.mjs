@@ -9,4 +9,10 @@ const compat = new FlatCompat({ baseDirectory: import.meta.dirname });
 export default [
   ...compat.extends("next/core-web-vitals"),
   { ignores: [".next/**", "out/**", "node_modules/**", "coverage/**"] },
+  {
+    // The flat-config file itself is the only legitimate place where an anonymous
+    // default export is required — exempt it to suppress the canonical's self-warning.
+    files: ["eslint.config.mjs"],
+    rules: { "import/no-anonymous-default-export": "off" },
+  },
 ];
