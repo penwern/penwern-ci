@@ -5,7 +5,7 @@ out="$(_rm curate-preservation-core)"; ec=$?
 assert_eq "$out" "gate" "resolve: known gate repo"
 assert_exit "$ec" 0 "resolve: known repo exits 0"
 
-out="$(_rm curate-event-watcher)"; ec=$?
+out="$(_rm curate-dev-js)"; ec=$?
 assert_eq "$out" "advisory" "resolve: known advisory repo"
 assert_exit "$ec" 0 "resolve: known advisory repo exits 0"
 

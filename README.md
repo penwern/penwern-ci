@@ -20,7 +20,7 @@ Flip the `mode` column for the repo in `registry.tsv` and commit here. No commit
 | --- | --- | --- | --- |
 | curate-preservation-core | go | gate | platform |
 | curate-preservation-api | go | gate | platform |
-| curate-event-watcher | go | advisory | platform |
+| curate-event-watcher | go | gate | platform |
 | curate-pure-integration | python | gate | platform |
 | curate-format-reporting | python | gate | platform |
 | curate-storage-reporting | python | gate | platform |
