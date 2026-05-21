@@ -262,3 +262,84 @@ assert_contains "$(cat /tmp/ans_sc5.out)" "DRIFT" "ansible check: drift output m
 _ans_chkab="$(mktmp)"
 _anssync ansible-check-absent "$_ans_chkab" --check >/tmp/ans_sc6.out 2>&1; ec=$?
 assert_exit "$ec" 2 "ansible check: config-absent exits 2"
+
+# ---------------------------------------------------------------------------
+# --update flag — force-replace canonical block when canonical evolves
+# ---------------------------------------------------------------------------
+
+# unknown flag exits 2
+bash scripts/sync-config.sh curate-preservation-core "$(mktmp)" --bogus >/tmp/uf1.out 2>&1; ec=$?
+assert_exit "$ec" 2 "sync: unknown flag exits 2"
+assert_contains "$(cat /tmp/uf1.out)" "unknown flag" "sync: unknown flag message"
+
+# --- Go --update ---
+
+# 1. drifted .golangci.yml: default refuses with exit 2
+_go_dr="$(mktmp)"
+cp configs/golangci.yml "$_go_dr/.golangci.yml"
+printf '\n# drift\n' >> "$_go_dr/.golangci.yml"
+bash scripts/sync-config.sh curate-preservation-core "$_go_dr" >/tmp/go_up1.out 2>&1; ec=$?
+assert_exit "$ec" 2 "go sync (default): drift refuses with exit 2"
+assert_contains "$(cat /tmp/go_up1.out)" "rerun with --update" "go sync (default): suggests --update"
+
+# 2. --update: overwrites drift, exits 0, content matches canonical
+bash scripts/sync-config.sh curate-preservation-core "$_go_dr" --update >/tmp/go_up2.out 2>&1; ec=$?
+assert_exit "$ec" 0 "go sync --update: overwrites drift, exits 0"
+assert_eq "$(diff -q configs/golangci.yml "$_go_dr/.golangci.yml" >/dev/null; echo $?)" "0" "go sync --update: result matches canonical"
+
+# --- Python --update ---
+
+# 3. existing [tool.ruff]: default refuses
+_py_up="$(mktmp)"
+printf '[project]\nname = "x"\nversion = "0.1.0"\n\n[tool.ruff]\nline-length = 88\n[tool.ruff.lint]\nselect = ["E"]\n' > "$_py_up/pyproject.toml"
+PENWERN_REGISTRY="$_py_reg" bash scripts/sync-config.sh py-sync-refuse "$_py_up" >/tmp/py_up1.out 2>&1; ec=$?
+assert_exit "$ec" 2 "py sync (default): existing [tool.ruff*] refuses with exit 2"
+assert_contains "$(cat /tmp/py_up1.out)" "rerun with --update" "py sync (default): suggests --update"
+
+# 4. --update: strips old [tool.ruff*], appends canonical, preserves [project]
+PENWERN_REGISTRY="$_py_reg" bash scripts/sync-config.sh py-sync-refuse "$_py_up" --update >/tmp/py_up2.out 2>&1; ec=$?
+assert_exit "$ec" 0 "py sync --update: rewrites [tool.ruff*] block, exits 0"
+assert_contains "$(cat "$_py_up/pyproject.toml")" "[project]" "py sync --update: preserves original [project] section"
+# Canonical [tool.ruff*] block must match byte-for-byte after rewrite
+_after_ruff="$(awk '/^\[tool\.ruff/{f=1} /^\[/ && !/^\[tool\.ruff/{f=0} f' "$_py_up/pyproject.toml")"
+_canonical_ruff="$(sed -n '/^\[tool\.ruff/,$p' configs/ruff.pyproject-fragment.toml)"
+assert_eq "$_after_ruff" "$_canonical_ruff" "py sync --update: rewritten [tool.ruff*] matches canonical"
+# Old drift marker must be gone
+case "$(cat "$_py_up/pyproject.toml")" in
+  *"line-length = 88"*) _pcfail "py sync --update: did not strip old [tool.ruff] line-length=88"; TESTS_RUN=$((TESTS_RUN + 1)) ;;
+  *) TESTS_RUN=$((TESTS_RUN + 1)) ;;
+esac
+
+# --- JS --update ---
+
+# 5. drifted eslint.config.mjs: default refuses
+_js_up="$(mktmp)"
+cp configs/eslint.vanilla.mjs "$_js_up/eslint.config.mjs"
+cp configs/prettierrc.json    "$_js_up/.prettierrc.json"
+printf '\n// drift\n' >> "$_js_up/eslint.config.mjs"
+PENWERN_REGISTRY="$_JSREG" bash scripts/sync-config.sh js-vani-drift "$_js_up" >/tmp/js_up1.out 2>&1; ec=$?
+assert_exit "$ec" 2 "js-vanilla sync (default): drift refuses with exit 2"
+assert_contains "$(cat /tmp/js_up1.out)" "rerun with --update" "js-vanilla sync (default): suggests --update"
+
+# 6. --update: overwrites drift, both files match canonical
+PENWERN_REGISTRY="$_JSREG" bash scripts/sync-config.sh js-vani-drift "$_js_up" --update >/tmp/js_up2.out 2>&1; ec=$?
+assert_exit "$ec" 0 "js-vanilla sync --update: overwrites drift, exits 0"
+assert_eq "$(diff -q configs/eslint.vanilla.mjs "$_js_up/eslint.config.mjs" >/dev/null; echo $?)" "0" "js-vanilla --update: eslint.config.mjs matches canonical"
+assert_eq "$(diff -q configs/prettierrc.json    "$_js_up/.prettierrc.json"  >/dev/null; echo $?)" "0" "js-vanilla --update: .prettierrc.json matches canonical"
+
+# --- Ansible --update ---
+
+# 7. drifted .ansible-lint: default refuses
+_ans_up="$(mktmp)"
+cp configs/ansible-lint.yml "$_ans_up/.ansible-lint"
+cp configs/yamllint.yml     "$_ans_up/.yamllint"
+printf '\n# drift\n' >> "$_ans_up/.ansible-lint"
+PENWERN_REGISTRY="$_ANSREG" bash scripts/sync-config.sh ansible-sync-drift "$_ans_up" >/tmp/ans_up1.out 2>&1; ec=$?
+assert_exit "$ec" 2 "ansible sync (default): drift refuses with exit 2"
+assert_contains "$(cat /tmp/ans_up1.out)" "rerun with --update" "ansible sync (default): suggests --update"
+
+# 8. --update: overwrites drift, both files match canonical
+PENWERN_REGISTRY="$_ANSREG" bash scripts/sync-config.sh ansible-sync-drift "$_ans_up" --update >/tmp/ans_up2.out 2>&1; ec=$?
+assert_exit "$ec" 0 "ansible sync --update: overwrites drift, exits 0"
+assert_eq "$(diff -q configs/ansible-lint.yml "$_ans_up/.ansible-lint" >/dev/null; echo $?)" "0" "ansible --update: .ansible-lint matches canonical"
+assert_eq "$(diff -q configs/yamllint.yml     "$_ans_up/.yamllint"     >/dev/null; echo $?)" "0" "ansible --update: .yamllint matches canonical"
