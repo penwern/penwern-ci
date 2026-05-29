@@ -30,5 +30,9 @@ jobs:
         run: |
           . configs/tool-versions.env
           pip install "ruff==${RUFF_VERSION}"
+      - name: Install pytest (pinned)
+        run: |
+          . configs/tool-versions.env
+          pip install "pytest==${PYTEST_VERSION}"
       - name: Run the bash test suite
         run: bash tests/run.sh
