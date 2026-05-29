@@ -4,7 +4,7 @@ curate-preservation-api	go	gate	platform	none
 curate-event-watcher	go	gate	platform	none
 curate-pure-integration	python	gate	platform	none
 curate-format-reporting	python	gate	platform	gate
-curate-storage-reporting	python	gate	platform	none
+curate-storage-reporting	python	gate	platform	gate
 curate-archivesspace-integration	python	gate	platform	none
 curate-calm-integration-backend	python	gate	platform	none
 curate-email-backend	python	gate	platform	none
