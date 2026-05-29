@@ -30,8 +30,9 @@ out="$(PENWERN_REGISTRY="$_tm_reg" bash scripts/resolve-mode.sh tm-gate test 2>&
 assert_eq "$out" "gate" "resolve test: gate"
 assert_exit "$ec" 0 "resolve test: gate exit 0"
 
-out="$(PENWERN_REGISTRY="$_tm_reg" bash scripts/resolve-mode.sh tm-adv test 2>&1)"
+out="$(PENWERN_REGISTRY="$_tm_reg" bash scripts/resolve-mode.sh tm-adv test 2>&1)"; ec=$?
 assert_eq "$out" "advisory" "resolve test: advisory"
+assert_exit "$ec" 0 "resolve test: advisory exit 0"
 
 out="$(PENWERN_REGISTRY="$_tm_reg" bash scripts/resolve-mode.sh tm-none test 2>&1)"; ec=$?
 assert_eq "$out" "none" "resolve test: none is valid"
@@ -47,3 +48,8 @@ assert_eq "$out" "gate" "resolve lint: explicit lint kind reads col 3"
 # real registry: format-reporting test-mode is gate
 out="$(bash scripts/resolve-mode.sh curate-format-reporting test 2>&1)"
 assert_eq "$out" "gate" "resolve test: format-reporting gate in real registry"
+
+# invalid kind argument -> exit 2 (usage/infra)
+out="$(bash scripts/resolve-mode.sh curate-format-reporting bad-kind 2>&1)"; ec=$?
+assert_exit "$ec" 2 "resolve: invalid kind exits 2"
+assert_contains "$out" "invalid kind" "resolve: invalid kind message"
