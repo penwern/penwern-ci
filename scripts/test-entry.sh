@@ -27,7 +27,7 @@ run_tests() {
     python) ( cd "$root" && pytest -m "not integration" ) ;;
     go)     ( cd "$root" && go test ./... ) ;;
     js-*|js) ( cd "$root" && npm test ) ;;
-    *)      die "unsupported language '$lang' for tests" 2 ;;
+    *)      log "INFRA: unsupported language '$lang' for tests"; exit 2 ;;
   esac
 }
 
@@ -35,7 +35,14 @@ run_tests; test_rc=$?
 
 case "$test_rc" in
   0) log "tests clean ($slug, $lang)"; exit 0 ;;
-  1) : ;;  # test failures -> handled by mode logic below
+  1)
+    if [ "$mode" = "advisory" ]; then
+      log "advisory: $slug ($lang) has test failures (NON-BLOCKING). Fix before flipping to gate."
+      exit 0
+    fi
+    log "gate: $slug ($lang) has test failures — FAILING."
+    exit 1
+    ;;
   5)
     # pytest exit 5 = no tests collected. test-mode != none but no tests = misconfig.
     log "INFRA: no tests collected for $slug ($lang) — test-mode != none but nothing to run. Failing loud."
@@ -46,11 +53,3 @@ case "$test_rc" in
     exit 2
     ;;
 esac
-
-# Findings path (test_rc == 1).
-if [ "$mode" = "advisory" ]; then
-  log "advisory: $slug ($lang) has test failures (NON-BLOCKING). Fix before flipping to gate."
-  exit 0
-fi
-log "gate: $slug ($lang) has test failures — FAILING."
-exit 1

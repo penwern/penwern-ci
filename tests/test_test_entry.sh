@@ -22,6 +22,7 @@ assert_contains "$(cat /tmp/te1.out)" "advisory" "test-entry py: advisory banner
 # gate + failing tests -> exit 1
 _te py-fail-gate python fixtures/py-tests-fail >/tmp/te2.out 2>&1; ec=$?
 assert_exit "$ec" 1 "test-entry py: gate fails on test failures"
+assert_contains "$(cat /tmp/te2.out)" "gate" "test-entry py: gate failure banner"
 
 # advisory + passing -> exit 0
 _te py-pass-adv python fixtures/py-tests-pass >/tmp/te3.out 2>&1; ec=$?
