@@ -33,6 +33,6 @@ jobs:
       - name: Install pytest (pinned)
         run: |
           . configs/tool-versions.env
-          pip install "pytest==${PYTEST_VERSION}"
+          pip install "pytest==${PYTEST_VERSION}" "pytest-cov==${PYTEST_COV_VERSION}"
       - name: Run the bash test suite
         run: bash tests/run.sh

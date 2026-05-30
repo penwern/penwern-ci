@@ -6,6 +6,8 @@
 set -u
 here="$(dirname "$0")"
 . "$here/lib.sh"
+# Canonical coverage config (omits tests); absolute so it survives the `cd "$root"` below.
+cov_config="$(cd "$here/.." && pwd)/configs/coveragerc"
 
 slug="${1:-}"; [ -n "$slug" ] || die "usage: test-entry.sh <repo-slug> <language> <repo-root>" 2
 lang="${2:-}"; [ -n "$lang" ] || die "usage: test-entry.sh <repo-slug> <language> <repo-root>" 2
@@ -24,8 +26,8 @@ fi
 
 run_tests() {
   case "$lang" in
-    python) ( cd "$root" && pytest -m "not integration" ) ;;
-    go)     ( cd "$root" && go test ./... ) ;;
+    python) ( cd "$root" && pytest -m "not integration" --cov --cov-config="$cov_config" --cov-report=term-missing ) ;;
+    go)     ( cd "$root" && go test -cover ./... ) ;;
     js-*|js) ( cd "$root" && npm test ) ;;
     *)      log "INFRA: unsupported language '$lang' for tests"; exit 2 ;;
   esac

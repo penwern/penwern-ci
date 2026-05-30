@@ -1,0 +1,10 @@
+# Canonical coverage config used by penwern-ci reusable-test.yml.
+# Coverage is REPORTED (visibility), never gated — no fail_under here by design.
+[run]
+omit =
+    */tests/*
+    */test_*.py
+    */conftest.py
+    */.venv/*
+    */venv/*
+    */site-packages/*
