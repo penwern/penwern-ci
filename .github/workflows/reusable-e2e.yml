@@ -23,10 +23,20 @@ on:
         type: string
         default: requirements.txt
       workspace-slug:
-        description: Cells workspace the suite expects; created during bootstrap.
+        description: Cells workspace the suite expects; created during bootstrap (unless create-workspace is false).
         required: false
         type: string
         default: quarantine
+      create-workspace:
+        description: Whether bootstrap creates the workspace. Set false when the suite uses a default workspace (e.g. personal-files) that must not be clobbered.
+        required: false
+        type: boolean
+        default: true
+      setup-command:
+        description: Optional shell run after bootstrap, before the suite (from test-workdir, with the Cells env exported). E.g. to write a repo-specific .env file.
+        required: false
+        type: string
+        default: ""
       python-version:
         required: false
         type: string
@@ -94,7 +104,17 @@ jobs:
         id: boot
         env:
           WORKSPACE_SLUG: ${{ inputs.workspace-slug }}
+          CREATE_WORKSPACE: ${{ inputs.create-workspace }}
         run: bash penwern-ci/scripts/bootstrap-cells.sh
+
+      - name: Repo-specific setup
+        if: inputs.setup-command != ''
+        working-directory: target/${{ inputs.test-workdir }}
+        env:
+          CURATE_BASE_URL: ${{ steps.boot.outputs.base_url }}
+          AUTH_TOKEN: ${{ steps.boot.outputs.token }}
+          CURATE_WORKSPACE: ${{ inputs.workspace-slug }}
+        run: ${{ inputs.setup-command }}
 
       - name: Run e2e suite
         working-directory: target/${{ inputs.test-workdir }}
