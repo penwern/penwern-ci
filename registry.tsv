@@ -5,7 +5,7 @@ curate-event-watcher	go	gate	platform	gate
 curate-pure-integration	python	gate	platform	none
 curate-format-reporting	python	gate	platform	gate
 curate-storage-reporting	python	gate	platform	gate
-curate-archivesspace-integration	python	gate	platform	none
+curate-archivesspace-integration	python	gate	platform	gate
 curate-calm-integration-backend	python	gate	platform	gate
 curate-email-backend	python	gate	platform	gate
 sharepoint-python-server	python	gate	platform	none
