@@ -1,0 +1,113 @@
+name: reusable-e2e
+# Live-Cells e2e: stand up a throwaway Pydio Cells + MySQL, bootstrap a
+# workspace, mint a short-lived PAT in-container, run the caller's
+# `-m integration` suite against https://localhost:8080, tear it all down.
+# No external host, no stored URL/PAT secret. Companion to reusable-test.yml,
+# which runs the hermetic `-m "not integration"` gate.
+on:
+  workflow_call:
+    inputs:
+      test-command:
+        description: Command that runs the live suite (from test-workdir, inside the caller checkout).
+        required: false
+        type: string
+        default: pytest -m integration
+      test-workdir:
+        description: Directory (relative to the caller checkout) to run test-command from.
+        required: false
+        type: string
+        default: "."
+      requirements-path:
+        description: pip requirements file (relative to the caller checkout).
+        required: false
+        type: string
+        default: requirements.txt
+      workspace-slug:
+        description: Cells workspace the suite expects; created during bootstrap.
+        required: false
+        type: string
+        default: quarantine
+      python-version:
+        required: false
+        type: string
+        default: "3.12"
+    secrets:
+      PENWERN_CI_APP_CLIENT_ID:
+        required: true
+      PENWERN_CI_APP_PRIVATE_KEY:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      COMPOSE_FILE: penwern-ci/ci/ephemeral-cells/docker-compose.yaml
+    steps:
+      - name: Checkout caller repo
+        uses: actions/checkout@v6
+        with:
+          path: target
+
+      - name: Mint penwern-ci read token
+        id: app_token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.PENWERN_CI_APP_CLIENT_ID }}
+          private-key: ${{ secrets.PENWERN_CI_APP_PRIVATE_KEY }}
+          owner: penwern
+          repositories: penwern-ci
+          permission-contents: read
+
+      - name: Checkout penwern-ci
+        uses: actions/checkout@v6
+        with:
+          repository: penwern/penwern-ci
+          ref: v1
+          path: penwern-ci
+          token: ${{ steps.app_token.outputs.token }}
+
+      - name: Read pinned tool versions
+        run: cat penwern-ci/configs/tool-versions.env >> "$GITHUB_ENV"
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ inputs.python-version }}
+          cache: pip
+
+      - name: Install caller deps
+        working-directory: target
+        run: |
+          python -m pip install --upgrade pip
+          req="${{ inputs.requirements-path }}"
+          if [ -f "$req" ]; then pip install -r "$req"; fi
+          pip install "pytest==${PYTEST_VERSION}"
+
+      - name: Start ephemeral Cells
+        run: docker compose -f "$COMPOSE_FILE" up -d
+
+      - name: Bootstrap (wait health, mint PAT, create workspace)
+        id: boot
+        env:
+          WORKSPACE_SLUG: ${{ inputs.workspace-slug }}
+        run: bash penwern-ci/scripts/bootstrap-cells.sh
+
+      - name: Run e2e suite
+        working-directory: target/${{ inputs.test-workdir }}
+        env:
+          CURATE_BASE_URL: ${{ steps.boot.outputs.base_url }}
+          AUTH_TOKEN: ${{ steps.boot.outputs.token }}
+          CURATE_WORKSPACE: ${{ inputs.workspace-slug }}
+          # Self-signed loopback cert on the throwaway container — see
+          # CurateAPIClient / cec. NEVER set against a real/remote host.
+          CURATE_INSECURE_TLS: "true"
+          CEC_SKIP_VERIFY: "true"
+        run: ${{ inputs.test-command }}
+
+      - name: Tear down ephemeral Cells
+        if: always()
+        run: docker compose -f "$COMPOSE_FILE" down -v

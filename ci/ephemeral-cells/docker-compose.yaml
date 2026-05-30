@@ -1,0 +1,49 @@
+# Throwaway Pydio Cells (Community) + MySQL for the ephemeral-Cells e2e job.
+# Brought up by reusable-e2e.yml, bootstrapped + torn down per job. No external
+# host, no stored URL/PAT secret. Admin creds are fixed/known (CI-only).
+#
+# The cells image is DIGEST-PINNED so an upstream `:latest` bump can't redden CI
+# overnight. To refresh: `docker pull pydio/cells:latest`, read the new digest
+# with `docker image inspect --format '{{index .RepoDigests 0}}' pydio/cells:latest`,
+# update the digest below, and re-run the spike before bumping.
+services:
+  cells:
+    # pydio/cells:latest as of 2026-05-30 (Community; namespace-creation verified)
+    image: pydio/cells@sha256:af4697d62f2de7498cdb9456b931a23f17fd1656b162cf3d4db2961fb7081b86
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - CELLS_INSTALL_YAML=/pydio/config/install.yml
+      - CELLS_JOBS_LOG_LEVEL=debug
+    volumes:
+      - cellsdir:/var/cells
+      - data:/var/cells/data
+      - ./install-conf.yml:/pydio/config/install.yml:ro
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "--no-check-certificate", "-q", "https://0.0.0.0:8080"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mysql:
+    image: mysql:8
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: P@ssw0rd
+      MYSQL_DATABASE: cells
+      MYSQL_USER: pydio
+      MYSQL_PASSWORD: P@ssw0rd
+    command: [mysqld, --character-set-server=utf8mb4, --collation-server=utf8mb4_unicode_ci]
+    volumes:
+      - mysqldir:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pP@ssw0rd"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  data:
+  cellsdir:
+  mysqldir:
