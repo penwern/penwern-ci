@@ -32,3 +32,8 @@ Flip the `mode` column for the repo in `registry.tsv` and commit here. No commit
 | curate-dev-js | js-vanilla | gate | platform |
 | penwern-website | js-next | gate | platform |
 | curate-ansible-deployment | ansible | gate | platform |
+| ansible-cells | ansible | gate | platform |
+| ansible-curate | ansible | gate | platform |
+| ansible-mongodb | ansible | gate | platform |
+| ansible-nats | ansible | gate | platform |
+| ansible-prometheus | ansible | gate | platform |
