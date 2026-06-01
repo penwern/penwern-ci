@@ -1,12 +1,9 @@
 // Canonical penwern-ci ESLint config for Next.js projects.
 // Synced into each js-next repo's `eslint.config.mjs` byte-identical.
-// Caller must have eslint (>=9), @eslint/eslintrc, and eslint-config-next as devDependencies
-// (eslint-config-next ships bundled with `next` itself in recent versions).
-import { FlatCompat } from "@eslint/eslintrc";
-
-const compat = new FlatCompat({ baseDirectory: import.meta.dirname });
+// eslint-config-next >= 16 is flat-config native: spread its core-web-vitals array.
+import next from "eslint-config-next/core-web-vitals";
 
 export default [
-  ...compat.extends("next/core-web-vitals"),
+  ...next,
   { ignores: [".next/**", "out/**", "node_modules/**", "coverage/**"] },
 ];
