@@ -64,3 +64,4 @@ Flip the `mode` column for the repo in `registry.tsv` and commit here. No commit
 | ansible-mongodb | ansible | gate | platform |
 | ansible-nats | ansible | gate | platform |
 | ansible-prometheus | ansible | gate | platform |
+| ansible-grafana | ansible | gate | platform |
