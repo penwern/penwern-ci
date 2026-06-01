@@ -21,6 +21,8 @@
 #   TOKEN_EXPIRY    PAT lifetime                    (default: 2h)
 #   CURATE_BASE_URL loopback URL                    (default: https://localhost:8080)
 #   WORKSPACE_SLUG  workspace to create             (default: quarantine)
+#   CREATE_WORKSPACE create the workspace?          (default: true; false when the
+#                    suite uses a default workspace like personal-files)
 #   HEALTH_RETRIES  health poll attempts (×5s)      (default: 60)
 set -euo pipefail
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -32,6 +34,7 @@ admin_user="${ADMIN_USER:-admin}"
 token_expiry="${TOKEN_EXPIRY:-2h}"
 base_url="${CURATE_BASE_URL:-https://localhost:8080}"
 workspace="${WORKSPACE_SLUG:-quarantine}"
+create_workspace="${CREATE_WORKSPACE:-true}"
 health_retries="${HEALTH_RETRIES:-60}"
 
 dc() { docker compose -f "$compose_file" "$@"; }
@@ -58,15 +61,21 @@ log "minted ${#token}-char PAT for '$admin_user' (expires in $token_expiry)."
 
 # 3. Create the workspace over the default pydiods1 datasource. Idempotent (upsert).
 #    Body is the bare idm.Workspace proto (NOT wrapped) with exact protojson casing.
-read -r -d '' ws_body <<JSON || true
+#    Skipped when CREATE_WORKSPACE=false (suite uses a default workspace such as
+#    personal-files, which must not be clobbered).
+if [ "$create_workspace" = "true" ]; then
+  read -r -d '' ws_body <<JSON || true
 {"UUID":"$workspace","Slug":"$workspace","Label":"$workspace","Scope":"ADMIN",
  "Attributes":"{\"DEFAULT_RIGHTS\":\"rw\"}",
  "RootNodes":{"DATASOURCE:pydiods1":{"Uuid":"DATASOURCE:pydiods1","Path":"pydiods1/","Type":"COLLECTION","MetaStore":{"name":"\"\""}}}}
 JSON
-code="$(curl -sk -o /dev/null -w '%{http_code}' -X PUT "$base_url/a/workspace/$workspace" \
-  -H "Authorization: Bearer $token" -H "Content-Type: application/json" -d "$ws_body")"
-[ "$code" = "200" ] || die "workspace create '$workspace' returned HTTP $code (expected 200)" 2
-log "workspace '$workspace' ready (HTTP $code)."
+  code="$(curl -sk -o /dev/null -w '%{http_code}' -X PUT "$base_url/a/workspace/$workspace" \
+    -H "Authorization: Bearer $token" -H "Content-Type: application/json" -d "$ws_body")"
+  [ "$code" = "200" ] || die "workspace create '$workspace' returned HTTP $code (expected 200)" 2
+  log "workspace '$workspace' ready (HTTP $code)."
+else
+  log "CREATE_WORKSPACE=false — skipping workspace creation."
+fi
 
 # Emit outputs.
 echo "token=$token"
