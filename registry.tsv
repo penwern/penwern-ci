@@ -18,3 +18,4 @@ ansible-curate	ansible	gate	platform	none
 ansible-mongodb	ansible	gate	platform	none
 ansible-nats	ansible	gate	platform	none
 ansible-prometheus	ansible	gate	platform	none
+ansible-grafana	ansible	gate	platform	none
