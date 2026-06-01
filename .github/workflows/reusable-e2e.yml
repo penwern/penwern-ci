@@ -114,6 +114,10 @@ jobs:
           CURATE_BASE_URL: ${{ steps.boot.outputs.base_url }}
           AUTH_TOKEN: ${{ steps.boot.outputs.token }}
           CURATE_WORKSPACE: ${{ inputs.workspace-slug }}
+          # Same self-signed loopback container as the suite step, so a setup-command
+          # that calls Cells needs these. NEVER set against a real/remote host.
+          CURATE_INSECURE_TLS: "true"
+          CEC_SKIP_VERIFY: "true"
         run: ${{ inputs.setup-command }}
 
       - name: Run e2e suite
