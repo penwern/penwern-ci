@@ -34,4 +34,13 @@ if command -v ansible-lint >/dev/null 2>&1; then
   # is treated as opaque-but-syntactically-valid and the lint passes.
   PENWERN_CI_ROOT="$PWD" bash scripts/run-lint.sh ansible fixtures/ansible-vault-clean >/tmp/rlans_vault.out 2>&1; ec=$?
   assert_exit "$ec" 0 "run-lint ansible: vault-encrypted host_vars do not crash the lint (stub provides dummy vault password)"
+
+  # Clean fixture: no yamllint or ansible-lint findings -> exit 0.
+  PENWERN_CI_ROOT="$PWD" bash scripts/run-lint.sh ansible fixtures/ansible-clean >/tmp/rlans_clean.out 2>&1; ec=$?
+  assert_exit "$ec" 0 "run-lint ansible: clean fixture passes"
+
+  # Dirty fixture (`- command: ls`): ansible-lint violations, yamllint-clean. ansible-lint is
+  # ENFORCED, so this must fail the gate (exit 1), not pass as it would under advisory mode.
+  PENWERN_CI_ROOT="$PWD" bash scripts/run-lint.sh ansible fixtures/ansible-dirty >/tmp/rlans_dirty.out 2>&1; ec=$?
+  assert_exit "$ec" 1 "run-lint ansible: ansible-lint findings fail the gate (enforced, not advisory)"
 fi

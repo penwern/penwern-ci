@@ -57,23 +57,23 @@ case "$lang" in
     rc_yl=0
     ( cd "$root" && git ls-files -z '*.yml' '*.yaml' | xargs -0 -r yamllint -c "$yl_cfg" ) || rc_yl=$?
 
-    # ansible-lint (ADVISORY, non-blocking) — ansible-specific rules. Run for visibility but
-    # do NOT gate yet: the role repos carry a backlog of genuine findings
-    # (command-instead-of-module, no-changed-when, meta-incorrect, ignore-errors, ...) that
-    # must be triaged before this can block. Flip to enforced (gate on rc_al too) once the
-    # backlog is cleared. Dummy ANSIBLE_VAULT_PASSWORD_FILE lets it syntax-check
-    # vault-referencing vars without real creds: ansible only crashes when the password file
-    # is missing/empty, so non-empty content turns the failed decrypt into a non-fatal warning.
+    # ansible-lint (ENFORCED) — ansible-specific rules. The role-repo backlog has been
+    # cleared (low-risk findings fixed; behavior-changing ones documented inline with
+    # per-line `# noqa`, so the rules stay enabled for new code). Dummy
+    # ANSIBLE_VAULT_PASSWORD_FILE lets it syntax-check vault-referencing vars without real
+    # creds: ansible only crashes when the password file is missing/empty, so non-empty
+    # content turns the failed decrypt into a non-fatal warning.
     _vault_pw="$(mktemp)" || die "failed to create dummy vault password file" 2
     printf 'penwern-ci-lint-stub\n' > "$_vault_pw"
     rc_al=0
     ( cd "$root" && ANSIBLE_VAULT_PASSWORD_FILE="$_vault_pw" ansible-lint . ) || rc_al=$?
     rm -f "$_vault_pw"
-    [ "$rc_al" -eq 0 ] || log "ansible-lint (ADVISORY, non-blocking) reported findings/errors (rc=$rc_al) — not gating yet; triage the backlog, then flip ansible-lint to enforced"
+    # ansible-lint: 0 clean / 2 rule violations / anything else = internal/config error.
+    [ "$rc_al" -ne 0 ] && [ "$rc_al" -ne 2 ] && die "ansible-lint failed (rc=$rc_al) — internal/config error" 2
 
-    # Gate on yamllint only. yamllint via xargs: 0 = clean; non-zero = error-level findings
-    # (xargs maps yamllint's rc 1 to 123). Binary + config are pre-validated above.
-    [ "$rc_yl" -ne 0 ] && exit 1
+    # Gate on both yamllint and ansible-lint. yamllint via xargs: 0 = clean; non-zero =
+    # error-level findings (xargs maps yamllint's rc 1 to 123). Binaries + config pre-validated.
+    if [ "$rc_yl" -ne 0 ] || [ "$rc_al" -eq 2 ]; then exit 1; fi
     exit 0
     ;;
   *)
