@@ -8,6 +8,20 @@ rules:
   comments-indentation: false
   braces:
     max-spaces-inside: 1
+  # Allow column-aligned inline dicts (e.g. tabular host/schedule vars) — extra spaces
+  # after a comma are permitted for readability.
+  commas:
+    max-spaces-after: -1
+  # Don't flag mapping keys for truthiness — GitHub Actions workflows require the literal
+  # `on:` key, which YAML parses as boolean true. Values (e.g. `become: yes`) are still checked.
+  truthy:
+    check-keys: false
   octal-values:
     forbid-implicit-octal: true
     forbid-explicit-octal: true
+
+# Encrypted ansible-vault files are opaque AES blobs, not YAML — linting them only yields
+# false positives (e.g. missing "---"). Skip them everywhere.
+ignore: |
+  **/vault.yml
+  vault.yml

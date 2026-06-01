@@ -70,9 +70,9 @@ jobs:
         if: inputs.language == 'python'
         run: pip install "ruff==${RUFF_VERSION}"
 
-      - name: Install ansible-lint (pinned)
+      - name: Install ansible-lint + yamllint (pinned)
         if: inputs.language == 'ansible'
-        run: pip install "ansible-lint==${ANSIBLE_LINT_VERSION}"
+        run: pip install "ansible-lint==${ANSIBLE_LINT_VERSION}" "yamllint==${YAMLLINT_VERSION}"
 
       - name: Set up Node
         if: startsWith(inputs.language, 'js-')
