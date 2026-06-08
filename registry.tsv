@@ -19,3 +19,4 @@ ansible-mongodb	ansible	gate	platform	none	none
 ansible-nats	ansible	gate	platform	none	none
 ansible-prometheus	ansible	gate	platform	none	none
 ansible-grafana	ansible	gate	platform	none	none
+aws-manager	terraform	advisory	platform	none	none
