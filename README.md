@@ -13,6 +13,15 @@ Tool versions are pinned in `configs/tool-versions.env`; shared configs live in 
 | `python` | `ruff check` + `ruff format --check` |
 | `js-vanilla` / `js-next` | `eslint` + `prettier --check` |
 | `ansible` | `yamllint` (all git-tracked YAML) + `ansible-lint`, both enforced |
+| `terraform` | `terraform fmt -check -recursive` |
+
+**Why terraform is fmt-only (for now):** `terraform fmt -check` is deterministic and needs no
+`init`, providers, or cloud credentials, so it is the safe enforced gate. `terraform validate`
+(needs per-module `init` + provider downloads, and is flaky across repos with several root modules)
+and `tflint` (plugin install) are deliberately deferred — layer them in as a ratchet once the fmt
+gate is clean, mirroring how the ansible path started with yamllint enforced and added ansible-lint
+later. There is no per-repo terraform config file, so the config-drift audit treats terraform repos
+as always in sync.
 
 **Why ansible runs yamllint separately:** bare `ansible-lint .` discovers files by walking the
 Ansible *project structure*, which collapses when `roles/` is gitignored. In

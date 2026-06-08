@@ -129,6 +129,11 @@ jobs:
                   fi
                 fi
                 ;;
+              terraform)
+                # terraform's gate is `terraform fmt -check` only — no per-repo config file
+                # to drift (validate/tflint deferred). Nothing to diff; always in sync.
+                echo "::notice::$repo config in sync (terraform: fmt-only gate, no config file)"
+                ;;
               *)
                 echo "::warning::drift audit not yet implemented for lang=$lang ($repo)"
                 continue
