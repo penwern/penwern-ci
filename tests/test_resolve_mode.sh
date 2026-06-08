@@ -76,9 +76,9 @@ assert_eq "$out" "none" "resolve security: kind=test still reads col 5 (none)"
 
 # real registry: security pilots are advisory; un-onboarded repos default to none
 out="$(bash scripts/resolve-mode.sh curate-preservation-core security 2>&1)"
-assert_eq "$out" "advisory" "resolve security: preservation-core pilot is advisory"
-out="$(bash scripts/resolve-mode.sh curate-preservation-api security 2>&1)"
-assert_eq "$out" "none" "resolve security: un-onboarded repo defaults to none"
+assert_eq "$out" "advisory" "resolve security: app repo is advisory"
+out="$(bash scripts/resolve-mode.sh curate-ansible-deployment security 2>&1)"
+assert_eq "$out" "none" "resolve security: un-onboarded (ansible) repo defaults to none"
 
 # invalid kind argument -> exit 2 (usage/infra)
 out="$(bash scripts/resolve-mode.sh curate-format-reporting bad-kind 2>&1)"; ec=$?
