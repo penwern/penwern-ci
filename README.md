@@ -31,9 +31,32 @@ real YAML-hygiene gate (non-strict: errors block, warnings inform); encrypted `v
 are ignored and line-length is delegated to yamllint (the `yaml[line-length]` ansible-lint rule is
 skipped).
 
+## Security tier (advisory-first)
+
+`reusable-security.yml` is a parallel tier to lint/test, resolved from `registry.tsv`
+**column 6** (`security-mode`: `none` | `advisory` | `gate`, default `none`). It rolls out
+advisory-first: findings are reported but never block until a repo is deliberately flipped to
+`gate`, mirroring the lint advisory→gate ratchet. A repo opts in with a `.github/workflows/security.yml`
+caller (same shape as `lint.yml`, `language:` input) and a `security-mode` other than `none`.
+
+| Scanner | Scope |
+| --- | --- |
+| `gitleaks` | committed secrets — all languages |
+| `govulncheck` | Go dependency/stdlib vulnerabilities (`language: go`) |
+| `pip-audit` | Python dependency vulnerabilities (`language: python`) |
+| `npm audit` | JS dependency vulnerabilities (`language: js-*`) |
+| `trivy config` | IaC / Dockerfile misconfiguration — all languages |
+
+**No CodeQL.** GitHub code scanning needs Advanced Security on private repos, which the Free
+plan does not include and most Penwern repos are private — the API returns `403 Advanced Security
+must be enabled`. Revisit if the plan changes or for the public repos (`penwern-ci`, `curate-dev-js`).
+
+Each scanner's exit code is classified clean / findings / infra; the job aggregates: any infra →
+fail loud (all modes), else any findings → `gate` fails / `advisory` reports, else clean.
+
 ## Onboard a repo
 
-1. Add a row to `registry.tsv` (`repo<TAB>language<TAB>mode<TAB>owner<TAB>test-mode`) and regenerate the Status table (`bash scripts/gen-status.sh` — the table below must match, the test suite checks it).
+1. Add a row to `registry.tsv` (`repo<TAB>language<TAB>mode<TAB>owner<TAB>test-mode<TAB>security-mode`) and regenerate the Status table (`bash scripts/gen-status.sh` — the table below must match, the test suite checks it).
 2. `bash scripts/sync-config.sh <repo-slug> <path-to-repo>` to drop the canonical config.
 3. Add the caller workflow `.github/workflows/lint.yml` (see spec §4).
 4. Commit in the target repo (config + caller + format sweep as separate commits).

@@ -1,21 +1,21 @@
-# repo	language	mode	owner	test-mode
-curate-preservation-core	go	gate	platform	none
-curate-preservation-api	go	gate	platform	none
-curate-event-watcher	go	gate	platform	gate
-curate-pure-integration	python	gate	platform	none
-curate-format-reporting	python	gate	platform	gate
-curate-storage-reporting	python	gate	platform	gate
-curate-archivesspace-integration	python	gate	platform	gate
-curate-calm-integration-backend	python	gate	platform	gate
-curate-email-backend	python	gate	platform	gate
-sharepoint-python-server	python	gate	platform	gate
-curate-manager	python	gate	platform	none
-curate-dev-js	js-vanilla	gate	platform	none
-penwern-website	js-next	gate	platform	none
-curate-ansible-deployment	ansible	gate	platform	none
-ansible-cells	ansible	gate	platform	none
-ansible-curate	ansible	gate	platform	none
-ansible-mongodb	ansible	gate	platform	none
-ansible-nats	ansible	gate	platform	none
-ansible-prometheus	ansible	gate	platform	none
-ansible-grafana	ansible	gate	platform	none
+# repo	language	mode	owner	test-mode	security-mode
+curate-preservation-core	go	gate	platform	none	none
+curate-preservation-api	go	gate	platform	none	none
+curate-event-watcher	go	gate	platform	gate	none
+curate-pure-integration	python	gate	platform	none	none
+curate-format-reporting	python	gate	platform	gate	none
+curate-storage-reporting	python	gate	platform	gate	none
+curate-archivesspace-integration	python	gate	platform	gate	none
+curate-calm-integration-backend	python	gate	platform	gate	none
+curate-email-backend	python	gate	platform	gate	none
+sharepoint-python-server	python	gate	platform	gate	none
+curate-manager	python	gate	platform	none	none
+curate-dev-js	js-vanilla	gate	platform	none	none
+penwern-website	js-next	gate	platform	none	none
+curate-ansible-deployment	ansible	gate	platform	none	none
+ansible-cells	ansible	gate	platform	none	none
+ansible-curate	ansible	gate	platform	none	none
+ansible-mongodb	ansible	gate	platform	none	none
+ansible-nats	ansible	gate	platform	none	none
+ansible-prometheus	ansible	gate	platform	none	none
+ansible-grafana	ansible	gate	platform	none	none

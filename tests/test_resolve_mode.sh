@@ -49,6 +49,35 @@ assert_eq "$out" "gate" "resolve lint: explicit lint kind reads col 3"
 out="$(bash scripts/resolve-mode.sh curate-format-reporting test 2>&1)"
 assert_eq "$out" "gate" "resolve test: format-reporting gate in real registry"
 
+# --- security-mode (kind=security, reads column 6) ---
+_sm_reg="$(mktmp)/sm-reg.tsv"
+printf '# repo\tlanguage\tmode\towner\ttest-mode\tsecurity-mode\n' > "$_sm_reg"
+printf 'sm-gate\tpython\tgate\tt\tnone\tgate\n'      >> "$_sm_reg"
+printf 'sm-adv\tpython\tgate\tt\tnone\tadvisory\n'   >> "$_sm_reg"
+printf 'sm-none\tpython\tgate\tt\tnone\tnone\n'      >> "$_sm_reg"
+printf 'sm-bad\tpython\tgate\tt\tnone\tgarbage\n'    >> "$_sm_reg"
+
+out="$(PENWERN_REGISTRY="$_sm_reg" bash scripts/resolve-mode.sh sm-gate security 2>&1)"; ec=$?
+assert_eq "$out" "gate" "resolve security: gate"
+assert_exit "$ec" 0 "resolve security: gate exit 0"
+
+out="$(PENWERN_REGISTRY="$_sm_reg" bash scripts/resolve-mode.sh sm-adv security 2>&1)"
+assert_eq "$out" "advisory" "resolve security: advisory"
+
+out="$(PENWERN_REGISTRY="$_sm_reg" bash scripts/resolve-mode.sh sm-none security 2>&1)"
+assert_eq "$out" "none" "resolve security: none is valid"
+
+out="$(PENWERN_REGISTRY="$_sm_reg" bash scripts/resolve-mode.sh sm-bad security 2>&1)"; ec=$?
+assert_exit "$ec" 4 "resolve security: invalid security-mode exit 4"
+
+# security kind does not bleed into test/lint columns: sm-gate has test-mode=none, lint mode=gate
+out="$(PENWERN_REGISTRY="$_sm_reg" bash scripts/resolve-mode.sh sm-gate test 2>&1)"
+assert_eq "$out" "none" "resolve security: kind=test still reads col 5 (none)"
+
+# real registry: every repo defaults to security-mode none (advisory-first; not yet onboarded)
+out="$(bash scripts/resolve-mode.sh curate-preservation-core security 2>&1)"
+assert_eq "$out" "none" "resolve security: real registry defaults to none"
+
 # invalid kind argument -> exit 2 (usage/infra)
 out="$(bash scripts/resolve-mode.sh curate-format-reporting bad-kind 2>&1)"; ec=$?
 assert_exit "$ec" 2 "resolve: invalid kind exits 2"
