@@ -34,5 +34,10 @@ jobs:
         run: |
           . configs/tool-versions.env
           pip install "pytest==${PYTEST_VERSION}" "pytest-cov==${PYTEST_COV_VERSION}"
+      - name: Set up Terraform (pinned)
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.15.1'   # keep in step with TERRAFORM_VERSION in tool-versions.env
+          terraform_wrapper: false
       - name: Run the bash test suite
         run: bash tests/run.sh

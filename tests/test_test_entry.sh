@@ -10,6 +10,7 @@ printf 'py-notests-gate\tpython\tgate\tt\tgate\n'    >> "$_treg"
 printf 'py-notests-adv\tpython\tgate\tt\tadvisory\n' >> "$_treg"
 printf 'go-pass-gate\tgo\tgate\tt\tgate\n'           >> "$_treg"
 printf 'go-fail-gate\tgo\tgate\tt\tgate\n'           >> "$_treg"
+printf 'go-race-gate\tgo\tgate\tt\tgate\n'           >> "$_treg"
 printf 'bad-tmode\tpython\tgate\tt\tgarbage\n'       >> "$_treg"
 
 _te() { PENWERN_REGISTRY="$_treg" bash scripts/test-entry.sh "$@"; }
@@ -64,3 +65,8 @@ assert_exit "$ec" 0 "test-entry go: gate passing -> 0"
 # go gate + failing -> exit 1
 _te go-fail-gate go fixtures/go-tests-fail >/tmp/te12.out 2>&1; ec=$?
 assert_exit "$ec" 1 "test-entry go: gate failing -> 1"
+
+# go gate + data race -> exit 1 (proves the race detector is enabled; the
+# fixture passes under plain `go test` and is only caught by `go test -race`)
+_te go-race-gate go fixtures/go-tests-race >/tmp/te13.out 2>&1; ec=$?
+assert_exit "$ec" 1 "test-entry go: gate + data race -> 1 (-race enabled)"

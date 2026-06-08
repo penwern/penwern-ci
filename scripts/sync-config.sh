@@ -284,6 +284,14 @@ case "$lang" in
     exit 0
     ;;
 
+  terraform)
+    # The terraform gate is `terraform fmt -check` only — there is no per-repo config
+    # file to drop or diff (no .tflint.hcl yet; validate/tflint are deferred). So sync is
+    # a no-op in every mode and the repo is, by definition, always "in sync".
+    log "terraform: fmt-only gate, no canonical config to sync (in sync)"
+    exit 0
+    ;;
+
   *)
     die "sync not implemented for language '$lang' (engine is pluggable; add an arm)" 2
     ;;
