@@ -59,6 +59,13 @@ jobs:
 
       - name: Install govulncheck (pinned)
         if: inputs.language == 'go'
+        # GOTOOLCHAIN=auto so `go install` can fetch whatever Go govulncheck needs,
+        # independent of the caller repo's go.mod. setup-go pins GOTOOLCHAIN=local to the
+        # repo's version, but govulncheck v1.3.0 requires go >= 1.25; without this a repo
+        # on go 1.24 (e.g. curate-event-watcher) fails to build it. The govulncheck binary,
+        # once built, still analyses the repo with the repo's own toolchain.
+        env:
+          GOTOOLCHAIN: auto
         run: |
           go install "golang.org/x/vuln/cmd/govulncheck@${GOVULNCHECK_VERSION}"
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
