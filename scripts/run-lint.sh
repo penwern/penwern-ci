@@ -76,6 +76,23 @@ case "$lang" in
     if [ "$rc_yl" -ne 0 ] || [ "$rc_al" -eq 2 ]; then exit 1; fi
     exit 0
     ;;
+  terraform)
+    command -v terraform >/dev/null 2>&1 || die "terraform not on PATH (workflow must install at pinned version)" 2
+    # `terraform fmt -check -recursive` is the ENFORCED gate: deterministic, needs no
+    # `init`, no providers, and no cloud credentials, so it is safe and fast in CI.
+    # `terraform validate` (needs per-module `init` + provider downloads, flaky across
+    # multi-root-module repos) and `tflint` (plugin install) are deliberately DEFERRED —
+    # add them as a ratchet once the fmt gate is clean, mirroring how the ansible path
+    # started with yamllint enforced and layered ansible-lint in later.
+    # fmt -check exit codes: 0 = formatted, 3 = files need formatting (findings),
+    # anything else (e.g. 2) = a parse/diagnostic error in a .tf file (infra/fail-loud).
+    ( cd "$root" && terraform fmt -check -recursive ); tf_rc=$?
+    case "$tf_rc" in
+      0) exit 0 ;;
+      3) exit 1 ;;
+      *) die "terraform fmt errored (rc=$tf_rc) — likely a syntax error in a .tf file" 2 ;;
+    esac
+    ;;
   *)
     die "unsupported language '$lang'" 2
     ;;
