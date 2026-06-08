@@ -74,9 +74,11 @@ assert_exit "$ec" 4 "resolve security: invalid security-mode exit 4"
 out="$(PENWERN_REGISTRY="$_sm_reg" bash scripts/resolve-mode.sh sm-gate test 2>&1)"
 assert_eq "$out" "none" "resolve security: kind=test still reads col 5 (none)"
 
-# real registry: every repo defaults to security-mode none (advisory-first; not yet onboarded)
+# real registry: security pilots are advisory; un-onboarded repos default to none
 out="$(bash scripts/resolve-mode.sh curate-preservation-core security 2>&1)"
-assert_eq "$out" "none" "resolve security: real registry defaults to none"
+assert_eq "$out" "advisory" "resolve security: preservation-core pilot is advisory"
+out="$(bash scripts/resolve-mode.sh curate-preservation-api security 2>&1)"
+assert_eq "$out" "none" "resolve security: un-onboarded repo defaults to none"
 
 # invalid kind argument -> exit 2 (usage/infra)
 out="$(bash scripts/resolve-mode.sh curate-format-reporting bad-kind 2>&1)"; ec=$?
