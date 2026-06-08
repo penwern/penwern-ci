@@ -88,9 +88,11 @@ jobs:
             | sudo tar -xz -C /usr/local/bin gitleaks
 
       - name: Install trivy (pinned, all languages)
+        # Direct release tarball (like gitleaks above) — the contrib/install.sh script
+        # is flaky and was failing the install step even after resolving the tag.
         run: |
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
-            | sudo sh -s -- -b /usr/local/bin "v${TRIVY_VERSION}"
+          curl -sSfL "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz" \
+            | sudo tar -xz -C /usr/local/bin trivy
 
       - name: Security scan (mode resolved centrally from penwern-ci/registry.tsv)
         env:
