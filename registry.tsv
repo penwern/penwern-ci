@@ -9,7 +9,7 @@ curate-archivesspace-integration	python	gate	platform	gate	advisory
 curate-calm-integration-backend	python	gate	platform	gate	advisory
 curate-email-backend	python	gate	platform	gate	advisory
 sharepoint-python-server	python	gate	platform	gate	advisory
-curate-manager	python	gate	platform	none	advisory
+curate-manager	python	gate	platform	gate	advisory
 curate-dev-js	js-vanilla	gate	platform	none	advisory
 penwern-website	js-next	gate	platform	none	advisory
 curate-ansible-deployment	ansible	gate	platform	none	none

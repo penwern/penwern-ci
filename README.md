@@ -71,7 +71,30 @@ rather than disabling it repo-wide.
 
 ## Advisory → gate
 
-Flip the `mode` column for the repo in `registry.tsv` and commit here. No commit needed in the target repo.
+Flip the relevant mode column in `registry.tsv` and commit here, then **re-tag `v1`** (see below).
+No commit is needed in the target repo. Columns: `mode` (lint), `test-mode`, `security-mode`.
+
+## Releasing — the `v1` tag
+
+Callers pin `penwern/penwern-ci/.github/workflows/*@v1`. `v1` is a **moving major tag**: it always
+points at the latest released `main`. Engine changes (including registry flips) only reach consumers
+once `v1` is re-pointed:
+
+```bash
+git checkout main && git pull --ff-only
+git tag -f v1 && git push -f origin v1
+```
+
+Every consumer picks the new engine up on its **next** workflow run — there is no per-commit pin, so
+land breaking engine changes carefully (the self-test gates `main`, but consumers feel `v1` instantly).
+
+## Dependabot convention
+
+`.github/dependabot.yml` in each repo tracks its **application** dependencies (gomod / pip / npm /
+terraform). The `github-actions` ecosystem is included **only** in repos that have bespoke workflows
+referencing pinned third-party actions (e.g. `actions/checkout@v6`). Pure-caller repos — whose
+workflows only `uses: …@v1` — **omit** `github-actions`, because Dependabot cannot bump a moving
+major tag. penwern-ci itself carries the `github-actions` updater for the shared workflows.
 
 ## Status
 
