@@ -93,3 +93,21 @@ jobs:
             "${GITHUB_REPOSITORY##*/}" \
             "${LANGUAGE}" \
             "$GITHUB_WORKSPACE/target"
+
+      # Coverage visibility (Python). pytest --cov (in test-entry) leaves a .coverage
+      # data file in the target checkout; surface the report in the run summary. Best-effort
+      # and non-blocking — a soft fail-under threshold is deferred until repos have baselines.
+      - name: Coverage summary
+        if: ${{ always() && inputs.language == 'python' }}
+        working-directory: target
+        run: |
+          if [ -f .coverage ]; then
+            {
+              echo "### Test coverage"
+              echo '```'
+              coverage report 2>/dev/null || true
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "_No coverage data (test-mode=none or no tests collected)._" >> "$GITHUB_STEP_SUMMARY"
+          fi
