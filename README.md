@@ -120,4 +120,4 @@ major tag. penwern-ci itself carries the `github-actions` updater for the shared
 | ansible-nats | ansible | gate | platform |
 | ansible-prometheus | ansible | gate | platform |
 | ansible-grafana | ansible | gate | platform |
-| aws-manager | terraform | advisory | platform |
+| aws-manager | terraform | gate | platform |

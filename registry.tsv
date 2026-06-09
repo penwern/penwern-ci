@@ -3,13 +3,13 @@ curate-preservation-core	go	gate	platform	none	advisory
 curate-preservation-api	go	gate	platform	none	advisory
 curate-event-watcher	go	gate	platform	gate	advisory
 curate-pure-integration	python	gate	platform	none	advisory
-curate-format-reporting	python	gate	platform	gate	advisory
-curate-storage-reporting	python	gate	platform	gate	advisory
-curate-archivesspace-integration	python	gate	platform	gate	advisory
-curate-calm-integration-backend	python	gate	platform	gate	advisory
+curate-format-reporting	python	gate	platform	gate	gate
+curate-storage-reporting	python	gate	platform	gate	gate
+curate-archivesspace-integration	python	gate	platform	gate	gate
+curate-calm-integration-backend	python	gate	platform	gate	gate
 curate-email-backend	python	gate	platform	gate	advisory
-sharepoint-python-server	python	gate	platform	gate	advisory
-curate-manager	python	gate	platform	gate	advisory
+sharepoint-python-server	python	gate	platform	gate	gate
+curate-manager	python	gate	platform	gate	gate
 curate-dev-js	js-vanilla	gate	platform	none	advisory
 penwern-website	js-next	gate	platform	none	advisory
 curate-ansible-deployment	ansible	gate	platform	none	none
@@ -19,4 +19,4 @@ ansible-mongodb	ansible	gate	platform	none	none
 ansible-nats	ansible	gate	platform	none	none
 ansible-prometheus	ansible	gate	platform	none	none
 ansible-grafana	ansible	gate	platform	none	none
-aws-manager	terraform	advisory	platform	none	none
+aws-manager	terraform	gate	platform	none	none
