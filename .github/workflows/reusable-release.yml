@@ -1,0 +1,94 @@
+name: reusable-release
+# Publishes a GitHub release with a verified artifact when a caller pushes a v* tag.
+#   mode: source    -> git archive source tarball (Python services, default)
+#   mode: go-binary -> compiled linux/amd64 binary tarball (Go services)
+# Both modes upload <repo>-<...>.tar.gz plus a .sha256 sidecar.
+on:
+  workflow_call:
+    inputs:
+      mode:
+        description: "source (git-archive tarball) or go-binary (compiled binary)"
+        required: false
+        type: string
+        default: source
+      cgo:
+        description: "enable CGO for go-binary builds (e.g. libxml2 bindings)"
+        required: false
+        type: boolean
+        default: false
+      apt-packages:
+        description: "extra apt packages to install before a go-binary build (space separated)"
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0  # tags + VCS info for archive/build
+
+      # ---------------------------------------------------------------- source
+      - name: Build source tarball
+        if: inputs.mode == 'source'
+        env:
+          REPO: ${{ github.event.repository.name }}
+          REF: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          VERSION="${REF#v}"
+          ARCHIVE="${REPO}-${VERSION}.tar.gz"
+          git archive --format=tar.gz \
+            --prefix="${REPO}-${VERSION}/" \
+            -o "dist/${ARCHIVE}" "${REF}"
+          ( cd dist && sha256sum "${ARCHIVE}" > "${ARCHIVE}.sha256" )
+
+      # ------------------------------------------------------------- go-binary
+      - name: Install apt packages
+        if: ${{ inputs.mode == 'go-binary' && inputs.apt-packages != '' }}
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y ${{ inputs.apt-packages }}
+
+      - name: Set up Go
+        if: inputs.mode == 'go-binary'
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod  # single source of truth; no drift
+          cache: true
+          cache-dependency-path: '**/go.sum'
+
+      - name: Build binary
+        if: inputs.mode == 'go-binary'
+        env:
+          REPO: ${{ github.event.repository.name }}
+          GOOS: linux
+          GOARCH: amd64
+          CGO_ENABLED: ${{ inputs.cgo && '1' || '0' }}
+          GOFLAGS: "-buildvcs=true"  # embed VCS info in the binary
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          go build -v -trimpath -o "dist/${REPO}" .
+          cd dist
+          tar czf "${REPO}-linux-amd64.tar.gz" "${REPO}"
+          sha256sum "${REPO}-linux-amd64.tar.gz" > "${REPO}-linux-amd64.tar.gz.sha256"
+          rm -f "${REPO}"  # keep only the tarball + sha256 in dist/
+
+      # ----------------------------------------------------------- publish
+      - name: Create GitHub Release and upload assets
+        uses: softprops/action-gh-release@v3
+        with:
+          files: |
+            dist/*.tar.gz
+            dist/*.tar.gz.sha256
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-pre') || contains(github.ref_name, '-alpha') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-rc') }}
