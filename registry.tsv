@@ -2,7 +2,7 @@
 curate-preservation-core	go	gate	platform	none	advisory
 curate-preservation-api	go	gate	platform	none	advisory
 curate-event-watcher	go	gate	platform	gate	advisory
-curate-pure-integration	python	gate	platform	none	advisory
+curate-pure-integration	python	gate	platform	gate	advisory
 curate-format-reporting	python	gate	platform	gate	gate
 curate-storage-reporting	python	gate	platform	gate	gate
 curate-archivesspace-integration	python	gate	platform	gate	gate
