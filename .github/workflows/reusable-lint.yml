@@ -84,7 +84,7 @@ jobs:
 
       - name: Set up Terraform (pinned)
         if: inputs.language == 'terraform'
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@v4
         with:
           terraform_version: ${{ env.TERRAFORM_VERSION }}
           terraform_wrapper: false   # let terraform's own exit codes (0/3/2) reach lint-entry
