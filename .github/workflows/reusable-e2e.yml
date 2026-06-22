@@ -58,7 +58,7 @@ jobs:
       COMPOSE_FILE: penwern-ci/ci/ephemeral-cells/docker-compose.yaml
     steps:
       - name: Checkout caller repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           path: target
 
@@ -73,7 +73,7 @@ jobs:
           permission-contents: read
 
       - name: Checkout penwern-ci
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: penwern/penwern-ci
           ref: v1
