@@ -23,7 +23,7 @@ jobs:
           curl -sSfL "https://raw.githubusercontent.com/golangci/golangci-lint/${GOLANGCI_VERSION}/install.sh" \
             | sh -s -- -b "$(go env GOPATH)/bin" "${GOLANGCI_VERSION}"
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.11'
       - name: Install ruff (pinned)
