@@ -74,11 +74,13 @@ assert_exit "$ec" 4 "resolve security: invalid security-mode exit 4"
 out="$(PENWERN_REGISTRY="$_sm_reg" bash scripts/resolve-mode.sh sm-gate test 2>&1)"
 assert_eq "$out" "none" "resolve security: kind=test still reads col 5 (none)"
 
-# real registry: security pilots are advisory; un-onboarded repos default to none
-out="$(bash scripts/resolve-mode.sh curate-preservation-core security 2>&1)"
-assert_eq "$out" "advisory" "resolve security: app repo is advisory"
-out="$(bash scripts/resolve-mode.sh curate-ansible-deployment security 2>&1)"
-assert_eq "$out" "none" "resolve security: un-onboarded (ansible) repo defaults to none"
+# NOTE: security-mode resolution is asserted above against "$_sm_reg" (gate /
+# advisory / none / garbage), NOT against the real registry. Two assertions that
+# pinned curate-preservation-core to advisory and curate-ansible-deployment to
+# none used to live here; they broke the suite the moment those repos were flipped,
+# while adding no coverage the temp registry does not already provide. Same reason
+# the advisory-branch exemplars were moved to temp registries earlier — a mode flip
+# in registry.tsv must never break the self-tests.
 
 # invalid kind argument -> exit 2 (usage/infra)
 out="$(bash scripts/resolve-mode.sh curate-format-reporting bad-kind 2>&1)"; ec=$?
