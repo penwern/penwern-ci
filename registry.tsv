@@ -7,7 +7,7 @@ curate-format-reporting	python	gate	platform	gate	gate
 curate-storage-reporting	python	gate	platform	gate	gate
 curate-archivesspace-integration	python	gate	platform	gate	gate
 curate-calm-integration-backend	python	gate	platform	gate	gate
-curate-email-backend	python	gate	platform	gate	advisory
+curate-email-backend	python	gate	platform	gate	gate
 sharepoint-python-server	python	gate	platform	gate	gate
 curate-manager	python	gate	platform	gate	gate
 curate-dev-js	js-vanilla	gate	platform	none	advisory
