@@ -41,6 +41,28 @@ jobs:
               continue
             fi
             clone_ok=$((clone_ok + 1))
+
+            # Language-agnostic: every registered repo carries the canonical
+            # .gitattributes block. Compare only the marker-delimited section so
+            # that repo-specific rules below it (export-ignore, linguist) vary freely.
+            canonical_ga="$PENWERN_CI_ROOT/configs/gitattributes"
+            if [ ! -f "$tmp/.gitattributes" ]; then
+              echo "::error::config drift in $repo: .gitattributes absent"
+              rc=1
+            else
+              extracted_ga="$(mktemp)"
+              awk '/^# BEGIN penwern-ci canonical block/,/^# END penwern-ci canonical block/' \
+                "$tmp/.gitattributes" > "$extracted_ga"
+              if diff -u "$extracted_ga" "$canonical_ga" > /tmp/ga-drift-"$repo".out 2>&1; then
+                echo "::notice::$repo .gitattributes canonical block in sync"
+              else
+                echo "::error::config drift in $repo: .gitattributes canonical block differs"
+                cat /tmp/ga-drift-"$repo".out
+                rc=1
+              fi
+              rm -f "$extracted_ga"
+            fi
+
             case "$lang" in
               go)
                 if bash scripts/check-drift.sh "$repo" "$tmp"; then
