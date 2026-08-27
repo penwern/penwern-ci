@@ -15,6 +15,12 @@ Tool versions are pinned in `configs/tool-versions.env`; shared configs live in 
 | `ansible` | `yamllint` (all git-tracked YAML) + `ansible-lint`, both enforced |
 | `terraform` | `terraform fmt -check -recursive` |
 
+**Line endings (all languages):** every registered repo carries the canonical `.gitattributes`
+block from `configs/gitattributes`, which normalises text to LF in the index and on checkout so
+that an editor on Windows cannot re-introduce CRLF through a commit. The config-drift audit
+compares only the marker-delimited block, so repo-specific rules below it (`export-ignore`,
+`linguist-*`) are free to differ.
+
 **Why terraform is fmt-only (for now):** `terraform fmt -check` is deterministic and needs no
 `init`, providers, or cloud credentials, so it is the safe enforced gate. `terraform validate`
 (needs per-module `init` + provider downloads, and is flaky across repos with several root modules)
