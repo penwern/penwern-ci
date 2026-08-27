@@ -10,8 +10,8 @@ curate-calm-integration-backend	python	gate	platform	gate	gate
 curate-email-backend	python	gate	platform	gate	gate
 sharepoint-python-server	python	gate	platform	gate	gate
 curate-manager	python	gate	platform	gate	gate
-curate-dev-js	js-vanilla	gate	platform	none	advisory
-penwern-website	js-next	gate	platform	none	advisory
+curate-dev-js	js-vanilla	gate	platform	none	gate
+penwern-website	js-next	gate	platform	none	gate
 curate-ansible-deployment	ansible	gate	platform	none	gate
 ansible-cells	ansible	gate	platform	none	gate
 ansible-curate	ansible	gate	platform	none	gate
