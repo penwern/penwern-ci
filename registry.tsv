@@ -1,8 +1,8 @@
 # repo	language	mode	owner	test-mode	security-mode
-curate-preservation-core	go	gate	platform	none	advisory
-curate-preservation-api	go	gate	platform	none	advisory
+curate-preservation-core	go	gate	platform	none	gate
+curate-preservation-api	go	gate	platform	none	gate
 curate-event-watcher	go	gate	platform	gate	gate
-curate-pure-integration	python	gate	platform	gate	advisory
+curate-pure-integration	python	gate	platform	gate	gate
 curate-format-reporting	python	gate	platform	gate	gate
 curate-storage-reporting	python	gate	platform	gate	gate
 curate-archivesspace-integration	python	gate	platform	gate	gate
@@ -19,4 +19,4 @@ ansible-mongodb	ansible	gate	platform	none	gate
 ansible-nats	ansible	gate	platform	none	gate
 ansible-prometheus	ansible	gate	platform	none	gate
 ansible-grafana	ansible	gate	platform	none	gate
-aws-manager	terraform	gate	platform	none	none
+aws-manager	terraform	gate	platform	none	advisory
