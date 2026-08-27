@@ -30,6 +30,12 @@ jobs:
         run: |
           export PENWERN_CI_ROOT="$PWD"
           rc=0
+          # A section scan stops at the NEXT table header, so it also captures the blank
+          # line separating the two. Trailing blank lines are not config, so strip them
+          # from both sides before diffing or every repo reports phantom drift.
+          strip_trailing_blank() {
+            awk 'NF{last=NR} {line[NR]=$0} END{for(i=1;i<=last;i++) print line[i]}' "$1"
+          }
           clone_ok=0
           clone_attempted=0
           while IFS=$'\t' read -r repo lang mode owner || [ -n "$repo" ]; do
@@ -37,7 +43,11 @@ jobs:
             clone_attempted=$((clone_attempted + 1))
             tmp="$(mktemp -d)"
             if ! gh repo clone "penwern/$repo" "$tmp" -- --depth 1 -q; then
-              echo "::warning::could not clone penwern/$repo"
+              # A registered repo we cannot read is UNAUDITED, which in a summary is
+              # indistinguishable from a repo that passed. Fail loudly instead: the usual
+              # cause is the penwern-ci GitHub App not being granted access to that repo.
+              echo "::error::cannot clone penwern/$repo: registered but unreadable, so it is UNAUDITED (check the penwern-ci App's repository access)"
+              rc=1
               continue
             fi
             clone_ok=$((clone_ok + 1))
@@ -77,12 +87,14 @@ jobs:
                   echo "::error::config drift in $repo — pyproject.toml absent (config missing entirely)"
                   rc=1
                 else
-                  extracted="$(mktemp)"
-                  awk '/^\[tool\.ruff/{f=1} /^\[/ && !/^\[tool\.ruff/{f=0} f' "$tmp/pyproject.toml" > "$extracted"
+                  extracted_raw="$(mktemp)"; extracted="$(mktemp)"
+                  awk '/^\[tool\.ruff/{f=1} /^\[/ && !/^\[tool\.ruff/{f=0} f' "$tmp/pyproject.toml" > "$extracted_raw"
+                  strip_trailing_blank "$extracted_raw" > "$extracted"
                   canonical="$PENWERN_CI_ROOT/configs/ruff.pyproject-fragment.toml"
                   # Strip the leading comment lines from the canonical fragment before diffing
-                  canonical_stripped="$(mktemp)"
-                  sed -n '/^\[tool\.ruff/,$p' "$canonical" > "$canonical_stripped"
+                  canonical_raw="$(mktemp)"; canonical_stripped="$(mktemp)"
+                  sed -n '/^\[tool\.ruff/,$p' "$canonical" > "$canonical_raw"
+                  strip_trailing_blank "$canonical_raw" > "$canonical_stripped"
                   if diff -u "$extracted" "$canonical_stripped" > /tmp/drift-diff-"$repo".out 2>&1; then
                     echo "::notice::$repo config in sync"
                   else
@@ -90,7 +102,7 @@ jobs:
                     cat /tmp/drift-diff-"$repo".out
                     rc=1
                   fi
-                  rm -f "$extracted" "$canonical_stripped"
+                  rm -f "$extracted" "$extracted_raw" "$canonical_raw" "$canonical_stripped"
                 fi
                 ;;
               js-vanilla|js-next)
@@ -125,27 +137,43 @@ jobs:
                 fi
                 ;;
               ansible)
-                canonical_ansible_lint="$PENWERN_CI_ROOT/configs/ansible-lint.yml"
+                # Two legitimate shapes share lang=ansible. A standalone role (meta/main.yml
+                # present, the standard role marker) skips galaxy role-name, which the
+                # deployment repo does not; the deployment repo excludes the vendored
+                # geerlingguy.* roles, which a role repo has none of. One canonical file
+                # cannot describe both, so pick by shape, the same way js-vanilla and
+                # js-next each get their own eslint canonical.
+                if [ -f "$tmp/meta/main.yml" ]; then
+                  canonical_ansible_lint="$PENWERN_CI_ROOT/configs/ansible-lint.role.yml"
+                  ansible_profile="role"
+                else
+                  canonical_ansible_lint="$PENWERN_CI_ROOT/configs/ansible-lint.yml"
+                  ansible_profile="deployment"
+                fi
                 canonical_yamllint="$PENWERN_CI_ROOT/configs/yamllint.yml"
                 repo_ansible_lint="$tmp/.ansible-lint"
                 repo_yamllint="$tmp/.yamllint"
-                if [ ! -f "$repo_ansible_lint" ] || [ ! -f "$repo_yamllint" ]; then
-                  echo "::error::config drift in $repo — .ansible-lint or .yamllint absent"
+                if [ ! -f "$repo_ansible_lint" ]; then
+                  echo "::error::config drift in $repo: .ansible-lint absent"
                   rc=1
                 else
                   drift_ansible=0
                   if ! cmp -s "$repo_ansible_lint" "$canonical_ansible_lint"; then
-                    echo "::error::config drift in $repo — .ansible-lint differs from canonical"
+                    echo "::error::config drift in $repo: .ansible-lint differs from canonical ($ansible_profile profile)"
                     diff -u "$repo_ansible_lint" "$canonical_ansible_lint" || true
                     drift_ansible=1
                   fi
-                  if ! cmp -s "$repo_yamllint" "$canonical_yamllint"; then
-                    echo "::error::config drift in $repo — .yamllint differs from canonical"
+                  # .yamllint is NOT required. run-lint.sh invokes yamllint with an explicit
+                  # -c pointing at penwern-ci's canonical config, so a repo-local .yamllint is
+                  # never read by the gate. Compare it only if a repo keeps one for local runs,
+                  # so it cannot silently diverge from what CI enforces.
+                  if [ -f "$repo_yamllint" ] && ! cmp -s "$repo_yamllint" "$canonical_yamllint"; then
+                    echo "::error::config drift in $repo: .yamllint present but differs from canonical"
                     diff -u "$repo_yamllint" "$canonical_yamllint" || true
                     drift_ansible=1
                   fi
                   if [ "$drift_ansible" -eq 0 ]; then
-                    echo "::notice::$repo config in sync"
+                    echo "::notice::$repo config in sync ($ansible_profile profile)"
                   else
                     rc=1
                   fi

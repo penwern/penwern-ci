@@ -13,6 +13,12 @@ Tool versions are pinned in `configs/tool-versions.env`; shared configs live in 
 | `python` | `ruff check` + `ruff format --check` |
 | `js-vanilla` / `js-next` | `eslint` + `prettier --check` |
 | `ansible` | `yamllint` (all git-tracked YAML) + `ansible-lint`, both enforced |
+
+**Two ansible profiles:** `lang=ansible` covers two repo shapes. A standalone role (identified by
+`meta/main.yml`) is checked against `configs/ansible-lint.role.yml`, which skips galaxy `role-name`;
+the deployment repo is checked against `configs/ansible-lint.yml`, which excludes the vendored
+`geerlingguy.*` roles. `yamllint` is always invoked with an explicit `-c` pointing at
+`configs/yamllint.yml`, so a repo-local `.yamllint` is never read by the gate and is not required.
 | `terraform` | `terraform fmt -check -recursive` |
 
 **Line endings (all languages):** every registered repo carries the canonical `.gitattributes`
