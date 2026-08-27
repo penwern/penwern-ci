@@ -1,0 +1,7 @@
+---
+# Internal Penwern role, consumed via git `src` in requirements.yml (not published
+# to Ansible Galaxy), so galaxy role-name compliance is irrelevant.
+# Line-length is owned by yamllint (disabled fleet-wide via penwern-ci's canonical config).
+skip_list:
+  - role-name
+  - yaml[line-length]
