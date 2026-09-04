@@ -1,7 +1,6 @@
 # penwern-ci
 
 Single source of truth for standardised linting across Penwern repos.
-See the design spec: `docs/superpowers/specs/2026-05-19-standardised-linting-design.md` (in the monorepo workspace).
 
 ## What each gate runs
 
@@ -70,7 +69,24 @@ fail loud (all modes), else any findings → `gate` fails / `advisory` reports, 
 
 1. Add a row to `registry.tsv` (`repo<TAB>language<TAB>mode<TAB>owner<TAB>test-mode<TAB>security-mode`) and regenerate the Status table (`bash scripts/gen-status.sh` — the table below must match, the test suite checks it).
 2. `bash scripts/sync-config.sh <repo-slug> <path-to-repo>` to drop the canonical config.
-3. Add the caller workflow `.github/workflows/lint.yml` (see spec §4).
+3. Add the caller workflow `.github/workflows/lint.yml` in the target repo:
+
+   ```yaml
+   name: lint
+   on:
+     push: { branches: [main] }
+     pull_request: { branches: [main] }
+   jobs:
+     lint:
+       uses: penwern/penwern-ci/.github/workflows/reusable-lint.yml@v1
+       with:
+         # go | python | js-vanilla | js-next | ansible | terraform
+         language: go
+       secrets:
+         PENWERN_CI_APP_CLIENT_ID: ${{ secrets.PENWERN_CI_APP_CLIENT_ID }}
+         PENWERN_CI_APP_PRIVATE_KEY: ${{ secrets.PENWERN_CI_APP_PRIVATE_KEY }}
+   ```
+
 4. Commit in the target repo (config + caller + format sweep as separate commits).
 
 ### Ansible role repos
