@@ -1,7 +1,6 @@
 # penwern-ci
 
 Single source of truth for standardised linting across Penwern repos.
-See the design spec: `docs/superpowers/specs/2026-05-19-standardised-linting-design.md` (in the monorepo workspace).
 
 ## What each gate runs
 
@@ -20,6 +19,13 @@ the deployment repo is checked against `configs/ansible-lint.yml`, which exclude
 `geerlingguy.*` roles. `yamllint` is always invoked with an explicit `-c` pointing at
 `configs/yamllint.yml`, so a repo-local `.yamllint` is never read by the gate and is not required.
 | `terraform` | `terraform fmt -check -recursive` |
+
+**JS repos lint at the pinned versions, not their own.** `npm ci` still runs, because a repo's
+`eslint.config.mjs` imports its own plugins (`globals`, `eslint-config-next`, `@eslint/js`) and
+those resolve from `node_modules`. The linters themselves are invoked as
+`npx eslint@$ESLINT_VERSION` / `npx prettier@$PRETTIER_VERSION`, so the gate is the same for every
+JS repo and a dependency bump cannot move it. Keep each repo's own `eslint`/`prettier` devDependency
+in step with the pins, otherwise a developer's local run formats differently from CI.
 
 **Line endings (all languages):** every registered repo carries the canonical `.gitattributes`
 block from `configs/gitattributes`, which normalises text to LF in the index and on checkout so
@@ -70,7 +76,24 @@ fail loud (all modes), else any findings → `gate` fails / `advisory` reports, 
 
 1. Add a row to `registry.tsv` (`repo<TAB>language<TAB>mode<TAB>owner<TAB>test-mode<TAB>security-mode`) and regenerate the Status table (`bash scripts/gen-status.sh` — the table below must match, the test suite checks it).
 2. `bash scripts/sync-config.sh <repo-slug> <path-to-repo>` to drop the canonical config.
-3. Add the caller workflow `.github/workflows/lint.yml` (see spec §4).
+3. Add the caller workflow `.github/workflows/lint.yml` in the target repo:
+
+   ```yaml
+   name: lint
+   on:
+     push: { branches: [main] }
+     pull_request: { branches: [main] }
+   jobs:
+     lint:
+       uses: penwern/penwern-ci/.github/workflows/reusable-lint.yml@v1
+       with:
+         # go | python | js-vanilla | js-next | ansible | terraform
+         language: go
+       secrets:
+         PENWERN_CI_APP_CLIENT_ID: ${{ secrets.PENWERN_CI_APP_CLIENT_ID }}
+         PENWERN_CI_APP_PRIVATE_KEY: ${{ secrets.PENWERN_CI_APP_PRIVATE_KEY }}
+   ```
+
 4. Commit in the target repo (config + caller + format sweep as separate commits).
 
 ### Ansible role repos
