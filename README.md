@@ -20,6 +20,13 @@ the deployment repo is checked against `configs/ansible-lint.yml`, which exclude
 `configs/yamllint.yml`, so a repo-local `.yamllint` is never read by the gate and is not required.
 | `terraform` | `terraform fmt -check -recursive` |
 
+**JS repos lint at the pinned versions, not their own.** `npm ci` still runs, because a repo's
+`eslint.config.mjs` imports its own plugins (`globals`, `eslint-config-next`, `@eslint/js`) and
+those resolve from `node_modules`. The linters themselves are invoked as
+`npx eslint@$ESLINT_VERSION` / `npx prettier@$PRETTIER_VERSION`, so the gate is the same for every
+JS repo and a dependency bump cannot move it. Keep each repo's own `eslint`/`prettier` devDependency
+in step with the pins, otherwise a developer's local run formats differently from CI.
+
 **Line endings (all languages):** every registered repo carries the canonical `.gitattributes`
 block from `configs/gitattributes`, which normalises text to LF in the index and on checkout so
 that an editor on Windows cannot re-introduce CRLF through a commit. The config-drift audit

@@ -30,11 +30,19 @@ case "$lang" in
     ;;
   js-next|js-vanilla)
     [ -f "$root/package.json" ] || die "missing package.json in $root" 2
+    # The linters come from the canonical pins, NOT the repo lockfile. Using the
+    # repo's own copies (npx --no-install) meant these pins were never read: each
+    # JS repo floated on its own caret range, so the two gated repos ran different
+    # prettier versions and a Dependabot bump could move the gate on untouched code.
+    [ -n "${ESLINT_VERSION:-}" ]   || die "ESLINT_VERSION not set (workflow must cat configs/tool-versions.env into \$GITHUB_ENV)" 2
+    [ -n "${PRETTIER_VERSION:-}" ] || die "PRETTIER_VERSION not set (workflow must cat configs/tool-versions.env into \$GITHUB_ENV)" 2
+    # npm ci is still required: the repo's eslint.config.mjs imports its own plugins
+    # (globals, eslint-config-next, @eslint/js) and those resolve from node_modules.
     ( cd "$root" && npm ci ) || die "npm ci failed in $root" 2
     rc_eslint=0
-    ( cd "$root" && npx --no-install eslint . ) || rc_eslint=$?
+    ( cd "$root" && npx --yes "eslint@$ESLINT_VERSION" . ) || rc_eslint=$?
     rc_prettier=0
-    ( cd "$root" && npx --no-install prettier --check . ) || rc_prettier=$?
+    ( cd "$root" && npx --yes "prettier@$PRETTIER_VERSION" --check . ) || rc_prettier=$?
     # Map: rc 0 clean / 1 findings / >=2 infra
     [ "$rc_eslint" -ge 2 ] && die "eslint crashed (rc=$rc_eslint)" 2
     [ "$rc_prettier" -ge 2 ] && die "prettier crashed (rc=$rc_prettier)" 2
