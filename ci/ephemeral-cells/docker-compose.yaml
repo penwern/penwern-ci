@@ -25,6 +25,12 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+      # Cold start (with MySQL init) is 60-120s, well past interval x retries, so
+      # without a start_period the container is reported unhealthy for most of its
+      # boot and only recovers later. bootstrap-cells.sh polls long enough to ride
+      # that out, but the spurious unhealthy window makes a real failure to start
+      # indistinguishable from a normal boot in the job log.
+      start_period: 120s
 
   mysql:
     image: mysql:8
