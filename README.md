@@ -49,6 +49,56 @@ real YAML-hygiene gate (non-strict: errors block, warnings inform); encrypted `v
 are ignored and line-length is delegated to yamllint (the `yaml[line-length]` ansible-lint rule is
 skipped).
 
+## Test tier
+
+`reusable-test.yml` runs the hermetic suite, resolved from `registry.tsv` **column 5**
+(`test-mode`: `none` | `advisory` | `gate`, default `none`). A repo opts in with a
+`.github/workflows/test.yml` caller (same shape as `lint.yml`, `language:` input).
+
+| Language | Command |
+| --- | --- |
+| `go` | `go test -race -cover ./...` |
+| `python` | `pytest -m "not integration" --cov` |
+| `js-vanilla` / `js-next` | `npm test` |
+
+`go vet` is deliberately not repeated here: `govet` is already enabled in the central lint
+gate. The race detector is the hardening this tier adds over a plain `go test`.
+
+Python integration tests are excluded by marker so this tier stays fast and hermetic. The
+live tier is a separate workflow (below).
+
+**`test-mode=none` is a deliberate verdict, not a backlog entry.** The ansible role repos,
+`curate-ansible-deployment` and `aws-manager` are config-management and IaC: their correctness
+is a property of a converged host or a plan against real cloud state, neither of which a unit
+test reaches. yamllint plus ansible-lint (and `terraform fmt` plus `trivy config`) are the
+right instruments for them and are already enforced. Do not read those rows as work outstanding.
+The rows that *are* outstanding are the ones with a testable surface and no suite yet:
+`curate-dev-js` and `penwern-website`.
+
+## Live-Cells e2e tier
+
+`reusable-e2e.yml` is the counterpart to the hermetic tier: it stands up a throwaway Pydio Cells
+plus MySQL inside the job (`ci/ephemeral-cells/`, image digest-pinned), mints a short-lived admin
+PAT in-container, runs the caller's `pytest -m integration` suite against `https://localhost:8080`,
+and tears the stack down. No external host and no stored URL or PAT secret, which is what made the
+live tier viable at all: the previous blocker was that integration suites needed a real Curate
+instance that CI could not depend on.
+
+Callers configure it with `workspace-slug`, `create-workspace` (set `false` when the suite uses a
+default workspace such as `personal-files`, which must not be clobbered), an optional
+`setup-command` run with the Cells env exported, and `test-command` / `test-workdir` overrides.
+It is not driven by `registry.tsv`: a repo has an e2e job or it does not.
+
+`bootstrap-cells.sh` waits on the compose healthcheck, then polls `SearchWorkspaces` until it
+returns 200 before doing any write. The healthcheck only proves the HTTPS listener is up, and
+Cells accepts connections well before the IDM services behind it are ready; writes issued in
+that window return 500.
+
+**TLS verification is disabled for this job only** (`CURATE_INSECURE_TLS`, `CEC_SKIP_VERIFY`),
+which is acceptable solely because the target is an ephemeral, loopback, single-job container with
+no MITM surface. Never set these against a real or remote host. If this pattern ever points at
+anything non-loopback, extract the container CA and trust it instead.
+
 ## Security tier (advisory-first)
 
 `reusable-security.yml` is a parallel tier to lint/test, resolved from `registry.tsv`
@@ -133,26 +183,26 @@ major tag. penwern-ci itself carries the `github-actions` updater for the shared
 
 ## Status
 
-| Repo | Language | Mode | Owner |
-| --- | --- | --- | --- |
-| curate-preservation-core | go | gate | platform |
-| curate-preservation-api | go | gate | platform |
-| curate-event-watcher | go | gate | platform |
-| curate-pure-integration | python | gate | platform |
-| curate-format-reporting | python | gate | platform |
-| curate-storage-reporting | python | gate | platform |
-| curate-archivesspace-integration | python | gate | platform |
-| curate-calm-integration-backend | python | gate | platform |
-| curate-email-backend | python | gate | platform |
-| sharepoint-python-server | python | gate | platform |
-| curate-manager | python | gate | platform |
-| curate-dev-js | js-vanilla | gate | platform |
-| penwern-website | js-next | gate | platform |
-| curate-ansible-deployment | ansible | gate | platform |
-| ansible-cells | ansible | gate | platform |
-| ansible-curate | ansible | gate | platform |
-| ansible-mongodb | ansible | gate | platform |
-| ansible-nats | ansible | gate | platform |
-| ansible-prometheus | ansible | gate | platform |
-| ansible-grafana | ansible | gate | platform |
-| aws-manager | terraform | gate | platform |
+| Repo | Language | Lint | Tests | Security | Owner |
+| --- | --- | --- | --- | --- | --- |
+| curate-preservation-core | go | gate | gate | gate | platform |
+| curate-preservation-api | go | gate | gate | gate | platform |
+| curate-event-watcher | go | gate | gate | gate | platform |
+| curate-pure-integration | python | gate | gate | gate | platform |
+| curate-format-reporting | python | gate | gate | gate | platform |
+| curate-storage-reporting | python | gate | gate | gate | platform |
+| curate-archivesspace-integration | python | gate | gate | gate | platform |
+| curate-calm-integration-backend | python | gate | gate | gate | platform |
+| curate-email-backend | python | gate | gate | gate | platform |
+| sharepoint-python-server | python | gate | gate | gate | platform |
+| curate-manager | python | gate | gate | gate | platform |
+| curate-dev-js | js-vanilla | gate | none | gate | platform |
+| penwern-website | js-next | gate | none | gate | platform |
+| curate-ansible-deployment | ansible | gate | none | gate | platform |
+| ansible-cells | ansible | gate | none | gate | platform |
+| ansible-curate | ansible | gate | none | gate | platform |
+| ansible-mongodb | ansible | gate | none | gate | platform |
+| ansible-nats | ansible | gate | none | gate | platform |
+| ansible-prometheus | ansible | gate | none | gate | platform |
+| ansible-grafana | ansible | gate | none | gate | platform |
+| aws-manager | terraform | gate | none | advisory | platform |

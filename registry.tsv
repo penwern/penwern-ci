@@ -1,6 +1,6 @@
 # repo	language	mode	owner	test-mode	security-mode
-curate-preservation-core	go	gate	platform	none	gate
-curate-preservation-api	go	gate	platform	none	gate
+curate-preservation-core	go	gate	platform	gate	gate
+curate-preservation-api	go	gate	platform	gate	gate
 curate-event-watcher	go	gate	platform	gate	gate
 curate-pure-integration	python	gate	platform	gate	gate
 curate-format-reporting	python	gate	platform	gate	gate
