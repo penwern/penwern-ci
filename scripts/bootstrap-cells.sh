@@ -41,6 +41,21 @@ api_retries="${API_RETRIES:-40}"
 
 dc() { docker compose -f "$compose_file" "$@"; }
 
+# Every request below runs with `curl -k`, because the throwaway container serves
+# a self-signed cert. That is acceptable only against an ephemeral loopback
+# container with no MITM surface, and this enforces it rather than leaving it to
+# a comment: an overridden CURATE_BASE_URL would otherwise send the minted PAT to
+# an arbitrary host over an unverified connection. If this ever needs to point
+# somewhere non-loopback, extract the container CA and trust it instead of
+# widening this check.
+case "$base_url" in
+  https://localhost|https://localhost:*|\
+  https://127.0.0.1|https://127.0.0.1:*|\
+  https://\[::1\]|https://\[::1\]:*) : ;;
+  *) die "refusing to bootstrap against '$base_url': TLS verification is disabled for this job, so the target must be loopback" 2 ;;
+esac
+
+
 # 1. Wait for health.
 log "waiting for '$service' healthcheck (max $((health_retries * 5))s)…"
 for _ in $(seq 1 "$health_retries"); do
