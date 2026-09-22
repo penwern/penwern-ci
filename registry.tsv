@@ -20,3 +20,4 @@ ansible-nats	ansible	gate	platform	none	gate
 ansible-prometheus	ansible	gate	platform	none	gate
 ansible-grafana	ansible	gate	platform	none	gate
 aws-manager	terraform	gate	platform	none	advisory
+curate-auth-broker	go	gate	platform	gate	gate

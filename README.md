@@ -206,3 +206,4 @@ major tag. penwern-ci itself carries the `github-actions` updater for the shared
 | ansible-prometheus | ansible | gate | none | gate | platform |
 | ansible-grafana | ansible | gate | none | gate | platform |
 | aws-manager | terraform | gate | none | advisory | platform |
+| curate-auth-broker | go | gate | gate | gate | platform |
