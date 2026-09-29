@@ -24,3 +24,15 @@ assert_contains "$(cat /tmp/rl_untidy.out)" "not tidy" "run-lint go: untidy go.m
 _broken="$(mktmp)"; printf 'not a go.mod\n' > "$_broken/go.mod"; cp fixtures/go-clean/main.go "$_broken/"
 bash scripts/run-lint.sh go "$_broken" >/tmp/rl_brokenmod.out 2>&1; ec_broken=$?
 assert_exit "$ec_broken" 2 "run-lint go: unparseable go.mod = infra error (exit 2), not findings"
+
+# regression: go prints "go: downloading ..." to stderr before the diff; that must still be a
+# finding (exit 1), not an infra error. A stub go on PATH reproduces the ordering offline.
+_stub="$(mktmp)"
+cat > "$_stub/go" <<'STUB'
+#!/usr/bin/env bash
+if [ "$1" = mod ]; then echo "go: downloading example.com/x v1.0.0" >&2; echo "diff current/go.mod tidy/go.mod"; exit 1; fi
+exec "$REAL_GO" "$@"
+STUB
+chmod +x "$_stub/go"
+REAL_GO="$(command -v go)" PATH="$_stub:$PATH" bash scripts/run-lint.sh go fixtures/go-clean >/tmp/rl_dl.out 2>&1; ec_dl=$?
+assert_exit "$ec_dl" 1 "run-lint go: stderr download lines before the diff still report findings"
