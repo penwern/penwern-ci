@@ -15,10 +15,21 @@ case "$lang" in
     command -v golangci-lint >/dev/null 2>&1 || die "golangci-lint not installed" 2
     cfg="$PENWERN_CI_ROOT/configs/golangci.yml"
     [ -f "$cfg" ] || die "canonical config not found: $cfg" 2
+    command -v go >/dev/null 2>&1 || die "go not installed" 2
     ( cd "$root" && golangci-lint run ./... --config "$cfg" ); gc_rc=$?
-    [ "$gc_rc" -eq 0 ] && exit 0
-    [ "$gc_rc" -eq 1 ] && exit 1
-    die "golangci-lint exited $gc_rc (config/internal error — check '$cfg')" 2
+    [ "$gc_rc" -gt 1 ] && die "golangci-lint exited $gc_rc (config/internal error — check '$cfg')" 2
+    # go.mod/go.sum must already be tidy. `go mod tidy -diff` exits 1 both for a diff and for
+    # a real error (unreachable proxy, bad go.mod); only output starting "diff " is a finding.
+    tidy_out="$(cd "$root" && go mod tidy -diff 2>&1)"; tidy_rc=$?
+    if [ "$tidy_rc" -ne 0 ]; then
+      printf '%s\n' "$tidy_out" >&2
+      case "$tidy_out" in
+        diff\ *) log "go.mod/go.sum are not tidy — run 'go mod tidy' and commit"; tidy_rc=1 ;;
+        *) die "go mod tidy -diff failed (rc=$tidy_rc) — not a tidiness finding" 2 ;;
+      esac
+    fi
+    [ "$gc_rc" -eq 0 ] && [ "$tidy_rc" -eq 0 ] && exit 0
+    exit 1
     ;;
   python)
     command -v ruff >/dev/null 2>&1 || die "ruff not installed" 2
