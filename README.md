@@ -8,7 +8,7 @@ Tool versions are pinned in `configs/tool-versions.env`; shared configs live in 
 
 | Language | Tools |
 | --- | --- |
-| `go` | `golangci-lint run` |
+| `go` | `golangci-lint run` + `go mod tidy -diff` (untidy go.mod/go.sum fails) |
 | `python` | `ruff check` + `ruff format --check` |
 | `js-vanilla` / `js-next` | `eslint` + `prettier --check` |
 | `ansible` | `yamllint` (all git-tracked YAML) + `ansible-lint`, both enforced |
