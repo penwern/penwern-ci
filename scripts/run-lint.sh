@@ -19,10 +19,13 @@ case "$lang" in
     ( cd "$root" && golangci-lint run ./... --config "$cfg" ); gc_rc=$?
     [ "$gc_rc" -gt 1 ] && die "golangci-lint exited $gc_rc (config/internal error — check '$cfg')" 2
     # go.mod/go.sum must already be tidy. `go mod tidy -diff` exits 1 both for a diff and for
-    # a real error (unreachable proxy, bad go.mod); only output starting "diff " is a finding.
-    tidy_out="$(cd "$root" && go mod tidy -diff 2>&1)"; tidy_rc=$?
+    # a real error (unreachable proxy, bad go.mod); only stdout starting "diff " is a finding.
+    # stderr is kept apart: "go: downloading ..." lines can precede the diff there.
+    tidy_err="$(mktemp)" || die "failed to create temp file" 2
+    tidy_out="$(cd "$root" && go mod tidy -diff 2>"$tidy_err")"; tidy_rc=$?
+    tidy_errtxt="$(cat "$tidy_err")"; rm -f "$tidy_err"
     if [ "$tidy_rc" -ne 0 ]; then
-      printf '%s\n' "$tidy_out" >&2
+      printf '%s\n%s\n' "$tidy_errtxt" "$tidy_out" >&2
       case "$tidy_out" in
         diff\ *) log "go.mod/go.sum are not tidy — run 'go mod tidy' and commit"; tidy_rc=1 ;;
         *) die "go mod tidy -diff failed (rc=$tidy_rc) — not a tidiness finding" 2 ;;
