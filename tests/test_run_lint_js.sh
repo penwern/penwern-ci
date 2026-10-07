@@ -51,3 +51,12 @@ assert_eq "$(sed 's/#.*//' scripts/run-lint.sh | grep -c -- 'eslint@\$ESLINT_VER
 # shellcheck disable=SC2016
 assert_eq "$(sed 's/#.*//' scripts/run-lint.sh | grep -c -- 'prettier@\$PRETTIER_VERSION')" "1" \
   "run-lint js: prettier invoked at the pinned version"
+
+# js-spfx: lint is owned by the SPFx gulp toolchain, so run-lint is an explicit no-op
+# (exit 0) that must not need package.json, npm or the eslint/prettier pins.
+_spfx_root="$(mktmp)"
+( unset ESLINT_VERSION PRETTIER_VERSION; bash scripts/run-lint.sh js-spfx "$_spfx_root" ) >/tmp/rljs_spfx.out 2>&1; ec=$?
+assert_exit "$ec" 0 "run-lint js-spfx: toolchain-owned, exits 0 without running anything"
+assert_contains "$(cat /tmp/rljs_spfx.out)" "toolchain" "run-lint js-spfx: says lint is toolchain-owned"
+bash scripts/run-lint.sh js-spfx fixtures/js-does-not-exist >/tmp/rljs_spfx_noroot.out 2>&1; ec=$?
+assert_exit "$ec" 2 "run-lint js-spfx: missing repo-root still exits 2"

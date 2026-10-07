@@ -343,3 +343,13 @@ PENWERN_REGISTRY="$_ANSREG" bash scripts/sync-config.sh ansible-sync-drift "$_an
 assert_exit "$ec" 0 "ansible sync --update: overwrites drift, exits 0"
 assert_eq "$(diff -q configs/ansible-lint.yml "$_ans_up/.ansible-lint" >/dev/null; echo $?)" "0" "ansible --update: .ansible-lint matches canonical"
 assert_eq "$(diff -q configs/yamllint.yml     "$_ans_up/.yamllint"     >/dev/null; echo $?)" "0" "ansible --update: .yamllint matches canonical"
+
+# js-spfx: lint config is toolchain-owned, so sync is a no-op in every mode and writes nothing
+_spfxreg="$(mktmp)/spfx-reg.tsv"
+printf 'spfx-repo\tjs-spfx\tadvisory\tplatform\tnone\tadvisory\n' > "$_spfxreg"
+_spfx_dir="$(mktmp)"
+for _mode in "" --check --update; do
+  PENWERN_REGISTRY="$_spfxreg" bash scripts/sync-config.sh spfx-repo "$_spfx_dir" $_mode >/tmp/spfx_sc.out 2>&1; ec=$?
+  assert_exit "$ec" 0 "js-spfx sync ${_mode:-default}: no-op, exits 0"
+done
+assert_eq "$(ls -A "$_spfx_dir" | wc -l | tr -d ' ')" "0" "js-spfx sync: writes no config files"

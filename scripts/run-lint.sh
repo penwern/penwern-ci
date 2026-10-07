@@ -42,6 +42,13 @@ case "$lang" in
     { [ "$rc_check" -eq 1 ] || [ "$rc_fmt" -eq 1 ]; } && exit 1
     exit 0
     ;;
+  js-spfx)
+    # SharePoint Framework: the SPFx gulp toolchain owns lint (eslint 8 + @microsoft/eslint-config-spfx,
+    # run by `gulp bundle`), and it cannot use the canonical eslint 9 flat config. Deliberately
+    # nothing to run here; this is "toolchain-owned", not "unfinished".
+    log "lint: js-spfx lint is owned by the SPFx gulp toolchain (gulp bundle); nothing to run"
+    exit 0
+    ;;
   js-next|js-vanilla)
     [ -f "$root/package.json" ] || die "missing package.json in $root" 2
     # The linters come from the canonical pins, NOT the repo lockfile. Using the
