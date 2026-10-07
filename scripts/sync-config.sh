@@ -292,6 +292,13 @@ case "$lang" in
     exit 0
     ;;
 
+  js-spfx)
+    # SPFx lint is owned by the repo's gulp toolchain (eslint 8 + @microsoft/eslint-config-spfx),
+    # so there is no canonical eslint/prettier config to drop or diff. No-op in every mode.
+    log "js-spfx: lint config is toolchain-owned, no canonical config to sync (in sync)"
+    exit 0
+    ;;
+
   *)
     die "sync not implemented for language '$lang' (engine is pluggable; add an arm)" 2
     ;;

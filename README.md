@@ -11,6 +11,7 @@ Tool versions are pinned in `configs/tool-versions.env`; shared configs live in 
 | `go` | `golangci-lint run` + `go mod tidy -diff` (untidy go.mod/go.sum fails) |
 | `python` | `ruff check` + `ruff format --check` |
 | `js-vanilla` / `js-next` | `eslint` + `prettier --check` |
+| `js-spfx` | none: SharePoint Framework repos lint inside their own `gulp bundle` (eslint 8 + `@microsoft/eslint-config-spfx`), so there is no canonical config to sync or drift-check. Registered for the security tier (`npm audit`, gitleaks, trivy) only. |
 | `ansible` | `yamllint` (all git-tracked YAML) + `ansible-lint`, both enforced |
 
 **Two ansible profiles:** `lang=ansible` covers two repo shapes. A standalone role (identified by
@@ -208,3 +209,4 @@ major tag. penwern-ci itself carries the `github-actions` updater for the shared
 | aws-manager | terraform | gate | none | advisory | platform |
 | curate-auth-broker | go | gate | gate | gate | platform |
 | curate-status | go | gate | gate | gate | platform |
+| curate-sharepoint-connector | js-spfx | advisory | none | advisory | platform |

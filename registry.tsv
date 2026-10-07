@@ -22,3 +22,4 @@ ansible-grafana	ansible	gate	platform	none	gate
 aws-manager	terraform	gate	platform	none	advisory
 curate-auth-broker	go	gate	platform	gate	gate
 curate-status	go	gate	platform	gate	gate
+curate-sharepoint-connector	js-spfx	advisory	platform	none	advisory
