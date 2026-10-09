@@ -7,10 +7,13 @@
 # Build a stub bin dir; prepend to PATH so stubs shadow any real tool but coreutils
 # (in /usr/bin) stay reachable.
 _secbin="$(mktmp)/bin"; mkdir -p "$_secbin"
-for _tool in gitleaks govulncheck pip-audit trivy npm; do
+for _tool in gitleaks govulncheck pip-audit trivy npm uv; do
   _var="STUB_$(printf '%s' "$_tool" | tr 'a-z-' 'A-Z_')_RC"
+  _log="${_var%_RC}_LOG"
   {
     echo '#!/usr/bin/env bash'
+    # Optional arg log (STUB_<TOOL>_LOG=file) so tests can assert how a scanner was invoked.
+    echo "if [ -n \"\${$_log:-}\" ]; then printf '%s\\n' \"\$*\" >> \"\$$_log\"; fi"
     echo "exit \${$_var:-0}"
   } > "$_secbin/$_tool"
   chmod +x "$_secbin/$_tool"
@@ -73,3 +76,39 @@ assert_exit "$ec" 2 "run-security: unsupported language -> infra 2"
 # missing repo-root -> infra 2
 ( _rs go "$_sec_go/does-not-exist" >/tmp/rs11.out 2>&1 ); ec=$?
 assert_exit "$ec" 2 "run-security: missing repo-root -> infra 2"
+
+# --- python with uv.lock: audit the exported locked runtime deps ---
+_sec_uv="$(mktmp)/uv"; mkdir -p "$_sec_uv"; : > "$_sec_uv/uv.lock"
+
+( _rs python "$_sec_uv" >/tmp/rs12.out 2>&1 ); ec=$?
+assert_exit "$ec" 0 "run-security python+uv.lock: clean -> 0"
+
+( STUB_PIP_AUDIT_RC=1 _rs python "$_sec_uv" >/tmp/rs13.out 2>&1 ); ec=$?
+assert_exit "$ec" 1 "run-security python+uv.lock: pip-audit vulns -> 1"
+
+( STUB_UV_RC=1 _rs python "$_sec_uv" >/tmp/rs14.out 2>&1 ); ec=$?
+assert_exit "$ec" 2 "run-security python+uv.lock: uv export failure -> infra 2"
+
+# no uv on PATH (stub bin without uv, then coreutils only)
+_secbin_nouv="$(mktmp)/bin"; mkdir -p "$_secbin_nouv"
+for _t in gitleaks govulncheck pip-audit trivy npm; do cp "$_secbin/$_t" "$_secbin_nouv/$_t"; done
+( PATH="$_secbin_nouv:/usr/bin:/bin" bash scripts/run-security.sh python "$_sec_uv" >/tmp/rs15.out 2>&1 ); ec=$?
+assert_exit "$ec" 2 "run-security python+uv.lock: uv missing -> infra 2"
+
+# uv path: uv export gets the locked-runtime flags, pip-audit runs with --disable-pip
+_uvlog="$(mktmp)/uv.log"; _palog="$(mktmp)/pa.log"
+( STUB_UV_LOG="$_uvlog" STUB_PIP_AUDIT_LOG="$_palog" _rs python "$_sec_uv" >/tmp/rs16.out 2>&1 ); ec=$?
+assert_exit "$ec" 0 "run-security python+uv.lock: logged run -> 0"
+assert_contains "$(cat "$_uvlog" 2>/dev/null)" "export --frozen --no-dev --no-emit-project --no-emit-local --format requirements-txt" "uv export flags"
+assert_contains "$(cat "$_palog" 2>/dev/null)" "--disable-pip" "pip-audit gets --disable-pip with uv.lock"
+
+# uv.lock wins over requirements.txt
+: > "$_sec_uv/requirements.txt"
+_palog2="$(mktmp)/pa2.log"
+( STUB_PIP_AUDIT_LOG="$_palog2" _rs python "$_sec_uv" >/tmp/rs17.out 2>&1 ); ec=$?
+assert_contains "$(cat "$_palog2" 2>/dev/null)" "--disable-pip" "uv.lock takes precedence over requirements.txt"
+
+# without uv.lock the pip path is unchanged (no --disable-pip)
+_palog3="$(mktmp)/pa3.log"
+( STUB_PIP_AUDIT_LOG="$_palog3" _rs python "$_sec_py" >/tmp/rs18.out 2>&1 ); ec=$?
+assert_eq "$(cat "$_palog3" 2>/dev/null)" "-r requirements.txt" "no uv.lock: pip-audit -r requirements.txt unchanged"

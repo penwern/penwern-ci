@@ -77,6 +77,13 @@ jobs:
           python-version: '3.12'
           cache: 'pip'
 
+      - name: Set up uv (pinned; used when the caller has uv.lock)
+        if: inputs.language == 'python'
+        uses: astral-sh/setup-uv@v10.2.0
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: false
+
       - name: Install pip-audit (pinned)
         if: inputs.language == 'python'
         run: pip install "pip-audit==${PIP_AUDIT_VERSION}"

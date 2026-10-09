@@ -68,6 +68,9 @@ gate. The race detector is the hardening this tier adds over a plain `go test`.
 Python integration tests are excluded by marker so this tier stays fast and hermetic. The
 live tier is a separate workflow (below).
 
+Python repos with a `uv.lock` at the root are installed with `uv sync --frozen` (uv pinned as
+`UV_VERSION`); all others keep the pip + requirements.txt install.
+
 **`test-mode=none` is a deliberate verdict, not a backlog entry.** The ansible role repos,
 `curate-ansible-deployment` and `aws-manager` are config-management and IaC: their correctness
 is a property of a converged host or a plan against real cloud state, neither of which a unit
@@ -112,7 +115,7 @@ caller (same shape as `lint.yml`, `language:` input) and a `security-mode` other
 | --- | --- |
 | `gitleaks` | committed secrets — all languages |
 | `govulncheck` | Go dependency/stdlib vulnerabilities (`language: go`) |
-| `pip-audit` | Python dependency vulnerabilities (`language: python`) |
+| `pip-audit` | Python dependency vulnerabilities (`language: python`); repos with `uv.lock` are audited from `uv export` (runtime deps) |
 | `npm audit` | JS dependency vulnerabilities (`language: js-*`) |
 | `trivy config` | IaC / Dockerfile misconfiguration — all languages |
 
