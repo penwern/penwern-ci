@@ -65,9 +65,10 @@ case "$lang" in
     if [ -f "$root/uv.lock" ]; then
       command -v uv >/dev/null 2>&1 || die "uv not on PATH (workflow must install at pinned version)" 2
       uv_req="$(mktemp)" || die "could not create temp file for uv export" 2
-      # Runtime deps only: no dev group, not the project itself. The export carries hashes,
+      # Runtime deps only: no dev group, not the project itself, no local path deps
+      # (those export unhashed and would break --disable-pip). The export carries hashes,
       # which pip-audit --disable-pip requires.
-      ( cd "$root" && uv export --frozen --no-dev --no-emit-project --format requirements-txt -o "$uv_req" ) \
+      ( cd "$root" && uv export --frozen --no-dev --no-emit-project --no-emit-local --format requirements-txt -o "$uv_req" ) \
         || { rm -f "$uv_req"; die "uv export failed (infra/config error)" 2; }
       ( cd "$root" && pip-audit --disable-pip -r "$uv_req" ); pa_rc=$?
       rm -f "$uv_req"

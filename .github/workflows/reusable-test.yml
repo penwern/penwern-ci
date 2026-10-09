@@ -72,8 +72,12 @@ jobs:
         working-directory: target
         run: |
           uv sync --frozen --python 3.12
+          # Top up whichever test tool the lock lacks (test-entry runs pytest --cov).
           if [ ! -x .venv/bin/pytest ]; then
-            uv pip install "pytest==${PYTEST_VERSION}" "pytest-cov==${PYTEST_COV_VERSION}"
+            uv pip install "pytest==${PYTEST_VERSION}"
+          fi
+          if ! .venv/bin/python -c 'import pytest_cov' 2>/dev/null; then
+            uv pip install "pytest-cov==${PYTEST_COV_VERSION}"
           fi
           echo "$GITHUB_WORKSPACE/target/.venv/bin" >> "$GITHUB_PATH"
 

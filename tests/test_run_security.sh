@@ -99,7 +99,7 @@ assert_exit "$ec" 2 "run-security python+uv.lock: uv missing -> infra 2"
 _uvlog="$(mktmp)/uv.log"; _palog="$(mktmp)/pa.log"
 ( STUB_UV_LOG="$_uvlog" STUB_PIP_AUDIT_LOG="$_palog" _rs python "$_sec_uv" >/tmp/rs16.out 2>&1 ); ec=$?
 assert_exit "$ec" 0 "run-security python+uv.lock: logged run -> 0"
-assert_contains "$(cat "$_uvlog" 2>/dev/null)" "export --frozen --no-dev --no-emit-project --format requirements-txt" "uv export flags"
+assert_contains "$(cat "$_uvlog" 2>/dev/null)" "export --frozen --no-dev --no-emit-project --no-emit-local --format requirements-txt" "uv export flags"
 assert_contains "$(cat "$_palog" 2>/dev/null)" "--disable-pip" "pip-audit gets --disable-pip with uv.lock"
 
 # uv.lock wins over requirements.txt

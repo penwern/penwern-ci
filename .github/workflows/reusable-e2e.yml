@@ -100,8 +100,10 @@ jobs:
       - name: Install caller deps (uv)
         if: hashFiles('target/uv.lock') != ''
         working-directory: target
+        env:
+          PYTHON_VERSION: ${{ inputs.python-version }}
         run: |
-          uv sync --frozen --python ${{ inputs.python-version }}
+          uv sync --frozen --python "$PYTHON_VERSION"
           if [ ! -x .venv/bin/pytest ]; then
             uv pip install "pytest==${PYTEST_VERSION}"
           fi
