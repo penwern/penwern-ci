@@ -7,6 +7,7 @@
 #   - gitleaks            secret scanning, ALL languages
 #   - govulncheck         Go dependency/stdlib vulnerabilities      (language=go)
 #   - pip-audit           Python dependency vulnerabilities          (language=python)
+#                         audits uv.lock (via `uv export`) when present, else requirements.txt, else the project tree
 #   - npm audit           JS dependency vulnerabilities              (language=js-*, incl. js-spfx)
 #   - trivy config        IaC / Dockerfile misconfiguration, ALL languages
 #
@@ -58,9 +59,19 @@ case "$lang" in
     ;;
   python)
     command -v pip-audit >/dev/null 2>&1 || die "pip-audit not on PATH (workflow must install at pinned version)" 2
-    # Audit the declared requirements when present, else the project tree.
+    # Precedence: uv.lock (locked runtime deps via `uv export`), else requirements.txt,
+    # else the project tree.
     # pip-audit: 0 = no vulns, 1 = vulnerabilities found, other = error.
-    if [ -f "$root/requirements.txt" ]; then
+    if [ -f "$root/uv.lock" ]; then
+      command -v uv >/dev/null 2>&1 || die "uv not on PATH (workflow must install at pinned version)" 2
+      uv_req="$(mktemp)" || die "could not create temp file for uv export" 2
+      # Runtime deps only: no dev group, not the project itself. The export carries hashes,
+      # which pip-audit --disable-pip requires.
+      ( cd "$root" && uv export --frozen --no-dev --no-emit-project --format requirements-txt -o "$uv_req" ) \
+        || { rm -f "$uv_req"; die "uv export failed (infra/config error)" 2; }
+      ( cd "$root" && pip-audit --disable-pip -r "$uv_req" ); pa_rc=$?
+      rm -f "$uv_req"
+    elif [ -f "$root/requirements.txt" ]; then
       ( cd "$root" && pip-audit -r requirements.txt ); pa_rc=$?
     else
       ( cd "$root" && pip-audit . ); pa_rc=$?
