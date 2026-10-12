@@ -86,7 +86,7 @@ case "$lang" in
 
     if [ ! -f "$dst" ]; then
       # Greenfield: create pyproject.toml from canonical fragment
-      cp "$fragment" "$dst" || die "failed to write $dst from $fragment" 2
+      sed -n '/^\[tool\.ruff/,$p' "$fragment" > "$dst" || die "failed to write $dst from $fragment" 2
       log "wrote pyproject.toml from canonical (greenfield)"
       exit 0
     fi
@@ -117,7 +117,7 @@ case "$lang" in
     fi
 
     # Append canonical fragment
-    { echo; cat "$fragment"; } >> "$dst" || die "failed to append to $dst" 2
+    { echo; sed -n '/^\[tool\.ruff/,$p' "$fragment"; } >> "$dst" || die "failed to append to $dst" 2
     log "appended canonical [tool.ruff*] block to pyproject.toml"
     exit 0
     ;;
