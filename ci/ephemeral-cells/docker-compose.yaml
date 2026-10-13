@@ -2,14 +2,14 @@
 # Brought up by reusable-e2e.yml, bootstrapped + torn down per job. No external
 # host, no stored URL/PAT secret. Admin creds are fixed/known (CI-only).
 #
-# The cells image is DIGEST-PINNED so an upstream `:latest` bump can't redden CI
-# overnight. To refresh: `docker pull pydio/cells:latest`, read the new digest
-# with `docker image inspect --format '{{index .RepoDigests 0}}' pydio/cells:latest`,
-# update the digest below, and re-run the spike before bumping.
+# The cells image is DIGEST-PINNED to the Cells version the fleet runs (4.x),
+# never `:latest`, which moved to 5.0.0. To bump: pick the fleet's tag, read its
+# digest with `docker buildx imagetools inspect pydio/cells:<tag>`, update the
+# digest below, and re-run the e2e suites before bumping.
 services:
   cells:
-    # pydio/cells:latest as of 2026-05-30 (Community; namespace-creation verified)
-    image: pydio/cells@sha256:af4697d62f2de7498cdb9456b931a23f17fd1656b162cf3d4db2961fb7081b86
+    # pydio/cells:4.4.17 (Community), matching the fleet's Cells version
+    image: pydio/cells@sha256:71115c24e9189cc420598774a199ded8b9fafb0512f32c9acb67604153595d17
     restart: unless-stopped
     ports:
       - "8080:8080"
