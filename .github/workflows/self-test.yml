@@ -25,7 +25,7 @@ jobs:
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
       - uses: actions/setup-python@v7
         with:
-          python-version: '3.11'
+          python-version: '3.12'
       - name: Install ruff (pinned)
         run: |
           . configs/tool-versions.env
