@@ -153,6 +153,26 @@ jobs:
           CEC_SKIP_VERIFY: "true"
         run: ${{ inputs.test-command }}
 
+      # Teardown deletes the containers, so a mid-suite Cells crash (restart policy
+      # brings it back) leaves no trace unless the logs are printed first.
+      - name: Dump ephemeral Cells logs
+        if: failure()
+        run: |
+          dc() { docker compose -f "$COMPOSE_FILE" "$@"; }
+          dc ps -a || true
+          for id in $(dc ps -aq); do
+            docker inspect -f '{{.Name}} restarts={{.RestartCount}} oom_killed={{.State.OOMKilled}} exit={{.State.ExitCode}} started={{.State.StartedAt}}' "$id" || true
+          done
+          free -m || true
+          dc logs --no-color --timestamps cells mysql > "$RUNNER_TEMP/ephemeral-cells.log" 2>&1 || true
+          echo "--- crash signatures ---"
+          grep -nE 'panic|fatal error|concurrent map|goroutine [0-9]+ \[|Recovered|out of memory|Killed|Error 1205|Too many connections' "$RUNNER_TEMP/ephemeral-cells.log" | head -100 || true
+          for s in cells mysql; do
+            echo "::group::$s log"
+            dc logs --no-color --timestamps "$s" || true
+            echo "::endgroup::"
+          done
+
       - name: Tear down ephemeral Cells
         if: always()
         run: docker compose -f "$COMPOSE_FILE" down -v
