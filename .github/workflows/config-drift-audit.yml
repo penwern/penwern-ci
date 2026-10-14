@@ -103,6 +103,15 @@ jobs:
                     rc=1
                   fi
                   rm -f "$extracted" "$extracted_raw" "$canonical_raw" "$canonical_stripped"
+                  # The repo's dev-group ruff pin must match CI's, or local lint and CI disagree.
+                  want="$(sed -n 's/^RUFF_VERSION=//p' "$PENWERN_CI_ROOT/configs/tool-versions.env")"
+                  got="$(sed -n 's/^ *"ruff==\([^"]*\)".*/\1/p' "$tmp/pyproject.toml" | head -1)"
+                  if [ "$got" = "$want" ]; then
+                    echo "::notice::$repo ruff pin $got matches RUFF_VERSION"
+                  else
+                    echo "::error::config drift in $repo: dev-group ruff pin '${got:-absent}' != RUFF_VERSION $want"
+                    rc=1
+                  fi
                 fi
                 ;;
               js-vanilla|js-next)
