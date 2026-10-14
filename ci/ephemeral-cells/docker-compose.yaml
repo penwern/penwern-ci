@@ -16,6 +16,9 @@ services:
     environment:
       - CELLS_INSTALL_YAML=/pydio/config/install.yml
       - CELLS_JOBS_LOG_LEVEL=debug
+      # debug also makes the built-in caddy write /var/cells/logs/caddy_access.log,
+      # dumped on failure to see whether dropped requests reach Cells at all.
+      - CELLS_LOG=debug
     volumes:
       - cellsdir:/var/cells
       - data:/var/cells/data

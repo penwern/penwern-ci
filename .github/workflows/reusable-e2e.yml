@@ -167,6 +167,9 @@ jobs:
           dc logs --no-color --timestamps cells mysql > "$RUNNER_TEMP/ephemeral-cells.log" 2>&1 || true
           echo "--- crash signatures ---"
           grep -nE 'panic|fatal error|concurrent map|goroutine [0-9]+ \[|Recovered|out of memory|Killed|Error 1205|Too many connections' "$RUNNER_TEMP/ephemeral-cells.log" | head -100 || true
+          echo "::group::caddy access log"
+          dc exec -T cells cat /var/cells/logs/caddy_access.log || true
+          echo "::endgroup::"
           for s in cells mysql; do
             echo "::group::$s log"
             dc logs --no-color --timestamps "$s" || true
