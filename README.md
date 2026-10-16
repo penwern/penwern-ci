@@ -158,6 +158,16 @@ The `penwern.*` roles are separate gated repos. Each needs a per-repo `.ansible-
 deferred findings inline with `# noqa: <rule>` so the rule stays enabled for new code (ratchet)
 rather than disabling it repo-wide.
 
+## Self-hosted runner (opt-in)
+
+Set the caller repo's Actions variable `CI_RUNNER=campc` to run the lint, test, security and e2e
+jobs on the self-hosted runner labelled `campc`. Without the variable nothing changes and no extra
+minutes are used.
+
+- When opted in, a `pick-runner` job (one hosted minute per reusable-workflow call) checks for an online `campc` runner and falls back to `ubuntu-latest` if there is none or the probe fails.
+- The penwern-ci GitHub App needs the org permission "Self-hosted runners: read".
+- The runner needs Docker for the e2e tier.
+
 ## Advisory → gate
 
 Flip the relevant mode column in `registry.tsv` and commit here, then **re-tag `v1`** (see below).
