@@ -3,6 +3,9 @@ name: reusable-release
 #   mode: source    -> git archive source tarball (Python services, default)
 #   mode: go-binary -> compiled linux/amd64 binary tarball (Go services)
 # Both modes upload <repo>-<...>.tar.gz plus a .sha256 sidecar.
+# go-binary inputs: cgo (CGO_ENABLED), apt-packages (installed first), package
+# (Go package to build, default the repo root) and ldflags (passed to
+# go build -ldflags when non-empty, e.g. to stamp a version).
 on:
   workflow_call:
     inputs:
@@ -18,6 +21,16 @@ on:
         default: false
       apt-packages:
         description: "extra apt packages to install before a go-binary build (space separated)"
+        required: false
+        type: string
+        default: ""
+      package:
+        description: "go-binary: Go package to build (default the repo root, e.g. ./cmd/<name> for a cmd/ layout)"
+        required: false
+        type: string
+        default: "."
+      ldflags:
+        description: "go-binary: value for go build -ldflags (e.g. -X main.version=<tag>); empty adds no flag"
         required: false
         type: string
         default: ""
@@ -74,10 +87,14 @@ jobs:
           GOARCH: amd64
           CGO_ENABLED: ${{ inputs.cgo && '1' || '0' }}
           GOFLAGS: "-buildvcs=true"  # embed VCS info in the binary
+          PACKAGE: ${{ inputs.package }}
+          LDFLAGS: ${{ inputs.ldflags }}
         run: |
           set -euo pipefail
           mkdir -p dist
-          go build -v -trimpath -o "dist/${REPO}" .
+          build_args=(-v -trimpath)
+          if [ -n "${LDFLAGS}" ]; then build_args+=(-ldflags "${LDFLAGS}"); fi
+          go build "${build_args[@]}" -o "dist/${REPO}" "${PACKAGE}"
           cd dist
           tar czf "${REPO}-linux-amd64.tar.gz" "${REPO}"
           sha256sum "${REPO}-linux-amd64.tar.gz" > "${REPO}-linux-amd64.tar.gz.sha256"
