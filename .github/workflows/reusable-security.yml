@@ -133,16 +133,19 @@ jobs:
           cache-dependency-path: target/package-lock.json
 
       - name: Install gitleaks (pinned, all languages)
+        # User-writable bin dir, no sudo: the campc runner user has no passwordless sudo.
         run: |
+          mkdir -p "$RUNNER_TEMP/bin"
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
           curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
-            | sudo tar -xz -C /usr/local/bin gitleaks
+            | tar -xz -C "$RUNNER_TEMP/bin" gitleaks
 
       - name: Install trivy (pinned, all languages)
         # Direct release tarball (like gitleaks above) — the contrib/install.sh script
         # is flaky and was failing the install step even after resolving the tag.
         run: |
           curl -sSfL "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz" \
-            | sudo tar -xz -C /usr/local/bin trivy
+            | tar -xz -C "$RUNNER_TEMP/bin" trivy
 
       - name: Security scan (mode resolved centrally from penwern-ci/registry.tsv)
         env:
