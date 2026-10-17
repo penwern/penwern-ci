@@ -166,7 +166,8 @@ minutes are used.
 
 - When opted in, a `pick-runner` job (one hosted minute per reusable-workflow call) checks for an online `campc` runner and falls back to `ubuntu-latest` if there is none or the probe fails.
 - The penwern-ci GitHub App needs the org permission "Self-hosted runners: read".
-- The runner needs Docker for the e2e tier.
+- Dependabot runs (actor `dependabot[bot]` or a `dependabot/` branch) always stay on `ubuntu-latest`, so new third-party code never runs on CamPC.
+- The runner needs a Docker-compatible API for the e2e tier (CamPC uses rootless Podman via `DOCKER_HOST`).
 
 ## Advisory → gate
 

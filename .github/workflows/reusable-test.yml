@@ -16,8 +16,9 @@ permissions:
 
 jobs:
   pick-runner:
-    # Runs only when the caller opts in; skipped jobs cost no minutes.
-    if: vars.CI_RUNNER == 'campc'
+    # Runs only when the caller opts in, never for Dependabot (new third-party
+    # code stays on hosted runners); skipped jobs cost no minutes.
+    if: vars.CI_RUNNER == 'campc' && github.actor != 'dependabot[bot]' && !startsWith(github.head_ref, 'dependabot/')
     runs-on: ubuntu-latest
     timeout-minutes: 2
     outputs:
