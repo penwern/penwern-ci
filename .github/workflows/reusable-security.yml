@@ -20,8 +20,44 @@ permissions:
   contents: read
 
 jobs:
-  security:
+  pick-runner:
+    # Runs only when the caller opts in, never for Dependabot (new third-party
+    # code stays on hosted runners); skipped jobs cost no minutes.
+    if: vars.CI_RUNNER == 'campc' && github.actor != 'dependabot[bot]' && !startsWith(github.head_ref, 'dependabot/')
     runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      runner: ${{ steps.pick.outputs.runner }}
+    steps:
+      - name: Mint runner-probe token
+        id: app_token
+        continue-on-error: true
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.PENWERN_CI_APP_CLIENT_ID }}
+          private-key: ${{ secrets.PENWERN_CI_APP_PRIVATE_KEY }}
+          owner: penwern
+          permission-organization-self-hosted-runners: read
+      - name: Pick campc if online, else ubuntu-latest
+        id: pick
+        env:
+          GH_TOKEN: ${{ steps.app_token.outputs.token }}
+        run: |
+          online=0
+          if [ -n "$GH_TOKEN" ]; then
+            online=$(gh api /orgs/penwern/actions/runners --paginate \
+              --jq '[.runners[] | select(.status == "online") | select(any(.labels[]; .name == "campc"))] | length' \
+              2>/dev/null | awk '{s+=$1} END {print s+0}') || online=0
+          fi
+          if [ "${online:-0}" -gt 0 ]; then runner=campc; else runner=ubuntu-latest; fi
+          echo "runner=$runner" >> "$GITHUB_OUTPUT"
+          echo "Selected runner: $runner (online campc runners: ${online:-0})"
+
+  security:
+    needs: pick-runner
+    # Run even when pick-runner was skipped or failed; empty output falls back to hosted.
+    if: ${{ !cancelled() }}
+    runs-on: ${{ needs.pick-runner.outputs.runner || 'ubuntu-latest' }}
     timeout-minutes: 20
     steps:
       - name: Checkout caller repo
