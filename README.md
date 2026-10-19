@@ -83,7 +83,7 @@ The rows that *are* outstanding are the ones with a testable surface and no suit
 
 `reusable-e2e.yml` is the counterpart to the hermetic tier: it stands up a throwaway Pydio Cells
 plus MySQL inside the job (`ci/ephemeral-cells/`, image digest-pinned), mints a short-lived admin
-PAT in-container, runs the caller's `pytest -m integration` suite against `https://localhost:8080`,
+PAT in-container, runs the caller's `pytest -m integration` suite against `https://localhost:48761`,
 and tears the stack down. No external host and no stored URL or PAT secret, which is what made the
 live tier viable at all: the previous blocker was that integration suites needed a real Curate
 instance that CI could not depend on.

@@ -19,7 +19,7 @@
 #   CELLS_SERVICE   compose service name           (default: cells)
 #   ADMIN_USER      Cells admin user               (default: admin)
 #   TOKEN_EXPIRY    PAT lifetime                    (default: 2h)
-#   CURATE_BASE_URL loopback URL                    (default: https://localhost:8080)
+#   CURATE_BASE_URL loopback URL                    (default: https://localhost:48761)
 #   WORKSPACE_SLUG  workspace to create             (default: quarantine)
 #   CREATE_WORKSPACE create the workspace?          (default: true; false when the
 #                    suite uses a default workspace like personal-files)
@@ -33,7 +33,7 @@ compose_file="${COMPOSE_FILE:?COMPOSE_FILE is required}"
 service="${CELLS_SERVICE:-cells}"
 admin_user="${ADMIN_USER:-admin}"
 token_expiry="${TOKEN_EXPIRY:-2h}"
-base_url="${CURATE_BASE_URL:-https://localhost:8080}"
+base_url="${CURATE_BASE_URL:-https://localhost:48761}"
 workspace="${WORKSPACE_SLUG:-quarantine}"
 create_workspace="${CREATE_WORKSPACE:-true}"
 health_retries="${HEALTH_RETRIES:-60}"
