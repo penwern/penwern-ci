@@ -164,8 +164,7 @@ Set the caller repo's Actions variable `CI_RUNNER=campc` to run the lint, test, 
 jobs on the self-hosted runner labelled `campc`. Without the variable nothing changes and no extra
 minutes are used.
 
-- When opted in, a `pick-runner` job (one hosted minute per reusable-workflow call) checks for an online `campc` runner and falls back to `ubuntu-latest` if there is none or the probe fails.
-- The penwern-ci GitHub App needs the org permission "Self-hosted runners: read".
+- When opted in, jobs go straight to `campc` with no hosted fallback: if CamPC is off they queue until it is back. To run on hosted runners instead, unset the variable or set it to anything else. (A hosted probe used to pick the runner, but its one billed minute per call cost more than CamPC saved.)
 - Dependabot runs (actor `dependabot[bot]` or a `dependabot/` branch) always stay on `ubuntu-latest`, so new third-party code never runs on CamPC.
 - The runner needs a Docker-compatible API for the e2e tier (CamPC uses rootless Podman via `DOCKER_HOST`).
 
