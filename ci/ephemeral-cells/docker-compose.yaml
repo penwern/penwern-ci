@@ -12,7 +12,7 @@ services:
     image: pydio/cells@sha256:71115c24e9189cc420598774a199ded8b9fafb0512f32c9acb67604153595d17
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "48761:48761"
     environment:
       - CELLS_INSTALL_YAML=/pydio/config/install.yml
       - CELLS_JOBS_LOG_LEVEL=debug
@@ -24,7 +24,7 @@ services:
       - data:/var/cells/data
       - ./install-conf.yml:/pydio/config/install.yml:ro
     healthcheck:
-      test: ["CMD", "wget", "--spider", "--no-check-certificate", "-q", "https://0.0.0.0:8080"]
+      test: ["CMD", "wget", "--spider", "--no-check-certificate", "-q", "https://0.0.0.0:48761"]
       interval: 5s
       timeout: 5s
       retries: 5

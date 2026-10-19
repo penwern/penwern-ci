@@ -1,7 +1,7 @@
 name: reusable-e2e
 # Live-Cells e2e: stand up a throwaway Pydio Cells + MySQL, bootstrap a
 # workspace, mint a short-lived PAT in-container, run the caller's
-# `-m integration` suite against https://localhost:8080, tear it all down.
+# `-m integration` suite against https://localhost:48761, tear it all down.
 # No external host, no stored URL/PAT secret. Companion to reusable-test.yml,
 # which runs the hermetic `-m "not integration"` gate.
 on:
