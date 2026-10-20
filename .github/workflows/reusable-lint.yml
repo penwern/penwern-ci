@@ -66,7 +66,7 @@ jobs:
         uses: actions/setup-python@v7
         with:
           python-version: '3.12'
-          cache: 'pip'
+          cache: ${{ runner.environment == 'github-hosted' && 'pip' || '' }}
 
       - name: Install ruff (pinned)
         if: inputs.language == 'python'
@@ -81,7 +81,8 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: ${{ runner.environment == 'github-hosted' && 'npm' || '' }}
+          package-manager-cache: ${{ runner.environment == 'github-hosted' }}
           cache-dependency-path: target/package-lock.json
 
       - name: Set up Terraform (pinned)

@@ -31,8 +31,9 @@ run_tests() {
     # the bespoke build-and-test workflows already guard against. `go vet` is
     # NOT duplicated here — govet is already enabled in the central lint gate
     # (configs/golangci.yml). Race detector needs cgo + a C toolchain, both
-    # present on the ubuntu runner.
-    go)     ( cd "$root" && go test -race -cover ./... ) ;;
+    # present on the ubuntu runner. -count=1: CamPC keeps GOCACHE between jobs,
+    # and cached passes would skip re-running unchanged packages under -race.
+    go)     ( cd "$root" && go test -race -cover -count=1 ./... ) ;;
     js-*|js) ( cd "$root" && npm test ) ;;
     *)      log "INFRA: unsupported language '$lang' for tests"; exit 2 ;;
   esac

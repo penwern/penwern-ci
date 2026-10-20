@@ -58,7 +58,7 @@ skipped).
 
 | Language | Command |
 | --- | --- |
-| `go` | `go test -race -cover ./...` |
+| `go` | `go test -race -cover -count=1 ./...` |
 | `python` | `pytest -m "not integration" --cov` |
 | `js-vanilla` / `js-next` | `npm test` |
 
@@ -167,6 +167,7 @@ minutes are used.
 - When opted in, jobs go straight to `campc` with no hosted fallback: if CamPC is off they queue until it is back. To run on hosted runners instead, unset the variable or set it to anything else. (A hosted probe used to pick the runner, but its one billed minute per call cost more than CamPC saved.)
 - Dependabot runs (actor `dependabot[bot]` or a `dependabot/` branch) always stay on `ubuntu-latest`, so new third-party code never runs on CamPC.
 - The runner needs a Docker-compatible API for the e2e tier (CamPC uses rootless Podman via `DOCKER_HOST`).
+- CamPC keeps its caches on local disk per slot (toolchains, Go build, golangci-lint, pip, uv), wiped by the slot loop at most once a day (checked between jobs, so an idle slot keeps its cache until its next job). The reusables use the GitHub Actions cache only on hosted runners (`runner.environment == 'github-hosted'`): from CamPC, restoring and saving it was slower than building cold.
 
 ## Advisory → gate
 
