@@ -8,13 +8,13 @@ Canonical Dependabot setup for Penwern repos. This is **reference documentation*
 |---|---|
 | Schedule | `weekly`, `day: monday`, `time: "06:00"`, `timezone: "Europe/London"` |
 | Primary ecosystem (`pip` / `gomod` / `npm`) — `open-pull-requests-limit` | **10** |
-| `github-actions` ecosystem — `open-pull-requests-limit` | **5** |
+| `github-actions` ecosystem — `open-pull-requests-limit` | **10** |
 | Grouping | one group per ecosystem, `patterns: ["*"]`, `update-types: ["minor", "patch"]` (majors stay individual for review) |
 | `commit-message.prefix` | `"deps"` (and `"deps(actions)"` for the github-actions ecosystem) |
 
 ### Rationale
 - **10 for the primary ecosystem** (vs Dependabot's default of 5): app/library deps churn more; 10 avoids silently dropping bumps.
-- **5 for github-actions**: actions update rarely; 5 is plenty.
+- **10 for github-actions**: matches the primary ecosystem, so a burst of action majors (which are not grouped) is not held back.
 - **Grouped minor/patch**: one batched PR per week instead of N; majors remain individual so breaking changes get reviewed.
 
 ### Deliberate exceptions
@@ -48,7 +48,7 @@ updates:
       day: "monday"
       time: "06:00"
       timezone: "Europe/London"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 10
     commit-message:
       prefix: "deps(actions)"
     groups:
