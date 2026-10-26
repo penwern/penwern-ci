@@ -13,5 +13,5 @@ assert_contains "$(cat configs/ruff.pyproject-fragment.toml)" 'select = ["E", "F
 
 # tool versions pinned
 . configs/tool-versions.env
-assert_eq "$GOLANGCI_VERSION" "v2.12.1" "configs: golangci pin"
+assert_eq "$GOLANGCI_VERSION" "v2.15.0" "configs: golangci pin"
 assert_eq "$RUFF_VERSION" "0.17.0" "configs: ruff pin"
