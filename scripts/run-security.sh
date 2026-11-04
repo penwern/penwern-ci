@@ -8,7 +8,7 @@
 #   - govulncheck         Go dependency/stdlib vulnerabilities      (language=go)
 #   - pip-audit           Python dependency vulnerabilities          (language=python)
 #                         audits uv.lock (via `uv export`) when present, else requirements.txt, else the project tree
-#   - npm audit           JS dependency vulnerabilities              (language=js-*, incl. js-spfx)
+#   - npm audit           JS dependency vulnerabilities              (language=js-*, incl. js-spfx, js-electron)
 #   - trivy config        IaC / Dockerfile misconfiguration, ALL languages
 #
 # CodeQL is intentionally absent: code scanning needs GitHub Advanced Security on
@@ -79,7 +79,7 @@ case "$lang" in
     fi
     classify pip-audit "$pa_rc" 0 1
     ;;
-  js-next|js-vanilla|js-spfx|js)
+  js-next|js-vanilla|js-spfx|js-electron|js)
     command -v npm >/dev/null 2>&1 || die "npm not on PATH" 2
     [ -f "$root/package-lock.json" ] || die "npm audit needs package-lock.json in $root" 2
     # npm audit: 0 = nothing at/above the level, 1 = vulnerabilities at/above --audit-level.

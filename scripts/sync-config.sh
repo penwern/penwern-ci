@@ -299,6 +299,12 @@ case "$lang" in
     exit 0
     ;;
 
+  js-electron)
+    # Electron lint runs in the repo's own Windows workflow, so there is no canonical config. No-op.
+    log "js-electron: lint config is toolchain-owned, no canonical config to sync (in sync)"
+    exit 0
+    ;;
+
   *)
     die "sync not implemented for language '$lang' (engine is pluggable; add an arm)" 2
     ;;

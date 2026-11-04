@@ -198,6 +198,10 @@ jobs:
                 # exists to diff. Only the language-agnostic .gitattributes block applies.
                 echo "::notice::$repo config in sync (js-spfx: toolchain-owned lint, no config file)"
                 ;;
+              js-electron)
+                # Electron lint runs in the repo's own Windows workflow; only .gitattributes applies.
+                echo "::notice::$repo config in sync (js-electron: toolchain-owned lint, no config file)"
+                ;;
               *)
                 echo "::warning::drift audit not yet implemented for lang=$lang ($repo)"
                 continue

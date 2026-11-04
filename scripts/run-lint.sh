@@ -49,6 +49,12 @@ case "$lang" in
     log "lint: js-spfx lint is owned by the SPFx gulp toolchain (gulp bundle); nothing to run"
     exit 0
     ;;
+  js-electron)
+    # Electron desktop app: the repo's own workflow runs its eslint, tsc and packaged-build checks
+    # on Windows, which this Linux runner cannot reproduce. Toolchain-owned, like js-spfx.
+    log "lint: js-electron lint is owned by the repo's own Windows workflow; nothing to run"
+    exit 0
+    ;;
   js-next|js-vanilla)
     [ -f "$root/package.json" ] || die "missing package.json in $root" 2
     # The linters come from the canonical pins, NOT the repo lockfile. Using the
