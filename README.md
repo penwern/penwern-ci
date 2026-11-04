@@ -226,4 +226,4 @@ major tag. penwern-ci itself carries the `github-actions` updater for the shared
 | curate-auth-broker | go | gate | gate | gate | platform |
 | curate-status | go | gate | gate | gate | platform |
 | curate-sharepoint-connector | js-spfx | advisory | none | advisory | platform |
-| curate-desktop-client | js-electron | advisory | none | advisory | platform |
+| curate-desktop-client | js-electron | advisory | none | gate | platform |
