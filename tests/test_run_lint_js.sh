@@ -60,3 +60,9 @@ assert_exit "$ec" 0 "run-lint js-spfx: toolchain-owned, exits 0 without running 
 assert_contains "$(cat /tmp/rljs_spfx.out)" "toolchain" "run-lint js-spfx: says lint is toolchain-owned"
 bash scripts/run-lint.sh js-spfx fixtures/js-does-not-exist >/tmp/rljs_spfx_noroot.out 2>&1; ec=$?
 assert_exit "$ec" 2 "run-lint js-spfx: missing repo-root still exits 2"
+
+# js-electron: lint runs in the repo's own Windows workflow, so run-lint is an explicit no-op
+_el_root="$(mktmp)"
+( unset ESLINT_VERSION PRETTIER_VERSION; bash scripts/run-lint.sh js-electron "$_el_root" ) >/tmp/rljs_el.out 2>&1; ec=$?
+assert_exit "$ec" 0 "run-lint js-electron: owned by the repo workflow, exits 0 without running anything"
+assert_contains "$(cat /tmp/rljs_el.out)" "own Windows workflow" "run-lint js-electron: says where lint runs"

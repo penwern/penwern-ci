@@ -65,6 +65,12 @@ assert_exit "$ec" 1 "run-security js-spfx: npm audit vulns -> 1"
 ( _rs js-spfx "$_sec_js" >/tmp/rs8c.out 2>&1 ); ec=$?
 assert_exit "$ec" 0 "run-security js-spfx: all clean -> 0"
 
+# js-electron: runs npm audit like the other js languages
+( STUB_NPM_RC=1 _rs js-electron "$_sec_js" >/tmp/rs8d.out 2>&1 ); ec=$?
+assert_exit "$ec" 1 "run-security js-electron: npm audit vulns -> 1"
+( _rs js-electron "$_sec_js" >/tmp/rs8e.out 2>&1 ); ec=$?
+assert_exit "$ec" 0 "run-security js-electron: all clean -> 0"
+
 # ansible: no dependency scanner, gitleaks + trivy only; all clean -> 0
 ( _rs ansible "$_sec_go" >/tmp/rs9.out 2>&1 ); ec=$?
 assert_exit "$ec" 0 "run-security ansible: gitleaks+trivy only, clean -> 0"

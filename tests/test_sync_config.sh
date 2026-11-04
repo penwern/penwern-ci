@@ -353,3 +353,13 @@ for _mode in "" --check --update; do
   assert_exit "$ec" 0 "js-spfx sync ${_mode:-default}: no-op, exits 0"
 done
 assert_eq "$(ls -A "$_spfx_dir" | wc -l | tr -d ' ')" "0" "js-spfx sync: writes no config files"
+
+# js-electron: lint is owned by the repo's own Windows workflow, so sync is a no-op too
+_elreg="$(mktmp)/electron-reg.tsv"
+printf 'electron-repo\tjs-electron\tadvisory\tplatform\tnone\tadvisory\n' > "$_elreg"
+_el_dir="$(mktmp)"
+for _mode in "" --check --update; do
+  PENWERN_REGISTRY="$_elreg" bash scripts/sync-config.sh electron-repo "$_el_dir" $_mode >/tmp/el_sc.out 2>&1; ec=$?
+  assert_exit "$ec" 0 "js-electron sync ${_mode:-default}: no-op, exits 0"
+done
+assert_eq "$(ls -A "$_el_dir" | wc -l | tr -d ' ')" "0" "js-electron sync: writes no config files"
