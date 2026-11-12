@@ -1,0 +1,186 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "description": "configs/tool-versions.env must stay KEY=VALUE only (it is cat-ed into $GITHUB_ENV), so each pin's package is mapped here instead of in a comment. NODE_VERSION is a major-only pin and is left to hand. GitHub Actions stay on Dependabot.",
+  "enabledManagers": [
+    "custom.regex"
+  ],
+  "timezone": "Europe/London",
+  "schedule": [
+    "before 7am on monday"
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^configs/tool-versions\\.env$/"
+      ],
+      "matchStrings": [
+        "(?:^|\\n)GOLANGCI_VERSION=(?<currentValue>\\S+)"
+      ],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "golangci/golangci-lint"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^configs/tool-versions\\.env$/"
+      ],
+      "matchStrings": [
+        "(?:^|\\n)RUFF_VERSION=(?<currentValue>\\S+)"
+      ],
+      "datasourceTemplate": "pypi",
+      "depNameTemplate": "ruff"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^configs/tool-versions\\.env$/"
+      ],
+      "matchStrings": [
+        "(?:^|\\n)ESLINT_VERSION=(?<currentValue>\\S+)"
+      ],
+      "datasourceTemplate": "npm",
+      "depNameTemplate": "eslint"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^configs/tool-versions\\.env$/"
+      ],
+      "matchStrings": [
+        "(?:^|\\n)PRETTIER_VERSION=(?<currentValue>\\S+)"
+      ],
+      "datasourceTemplate": "npm",
+      "depNameTemplate": "prettier"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^configs/tool-versions\\.env$/"
+      ],
+      "matchStrings": [
+        "(?:^|\\n)ANSIBLE_LINT_VERSION=(?<currentValue>\\S+)"
+      ],
+      "datasourceTemplate": "pypi",
+      "depNameTemplate": "ansible-lint"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^configs/tool-versions\\.env$/"
+      ],
+      "matchStrings": [
+        "(?:^|\\n)YAMLLINT_VERSION=(?<currentValue>\\S+)"
+      ],
+      "datasourceTemplate": "pypi",
+      "depNameTemplate": "yamllint"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^configs/tool-versions\\.env$/"
+      ],
+      "matchStrings": [
+        "(?:^|\\n)PYTEST_VERSION=(?<currentValue>\\S+)"
+      ],
+      "datasourceTemplate": "pypi",
+      "depNameTemplate": "pytest"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^configs/tool-versions\\.env$/"
+      ],
+      "matchStrings": [
+        "(?:^|\\n)PYTEST_COV_VERSION=(?<currentValue>\\S+)"
+      ],
+      "datasourceTemplate": "pypi",
+      "depNameTemplate": "pytest-cov"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^configs/tool-versions\\.env$/"
+      ],
+      "matchStrings": [
+        "(?:^|\\n)TERRAFORM_VERSION=(?<currentValue>\\S+)"
+      ],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "hashicorp/terraform",
+      "extractVersionTemplate": "^v(?<version>.+)$"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^configs/tool-versions\\.env$/"
+      ],
+      "matchStrings": [
+        "(?:^|\\n)GITLEAKS_VERSION=(?<currentValue>\\S+)"
+      ],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "gitleaks/gitleaks",
+      "extractVersionTemplate": "^v(?<version>.+)$"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^configs/tool-versions\\.env$/"
+      ],
+      "matchStrings": [
+        "(?:^|\\n)TRIVY_VERSION=(?<currentValue>\\S+)"
+      ],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "aquasecurity/trivy",
+      "extractVersionTemplate": "^v(?<version>.+)$"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^configs/tool-versions\\.env$/"
+      ],
+      "matchStrings": [
+        "(?:^|\\n)GOVULNCHECK_VERSION=(?<currentValue>\\S+)"
+      ],
+      "datasourceTemplate": "go",
+      "depNameTemplate": "golang.org/x/vuln"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^configs/tool-versions\\.env$/"
+      ],
+      "matchStrings": [
+        "(?:^|\\n)PIP_AUDIT_VERSION=(?<currentValue>\\S+)"
+      ],
+      "datasourceTemplate": "pypi",
+      "depNameTemplate": "pip-audit"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^configs/tool-versions\\.env$/"
+      ],
+      "matchStrings": [
+        "(?:^|\\n)UV_VERSION=(?<currentValue>\\S+)"
+      ],
+      "datasourceTemplate": "pypi",
+      "depNameTemplate": "uv"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "One PR for the routine lint and scanner bumps; majors stay separate",
+      "matchManagers": [
+        "custom.regex"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "groupName": "CI tool versions"
+    }
+  ]
+}
