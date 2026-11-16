@@ -13,8 +13,8 @@ curate-manager	python	gate	platform	gate	gate
 curate-dev-js	js-vanilla	gate	platform	none	gate
 penwern-website	js-next	gate	platform	none	gate
 curate-ansible-deployment	ansible	gate	platform	none	gate
-ansible-cells	ansible	gate	platform	none	gate
-ansible-curate	ansible	gate	platform	none	gate
+ansible-cells	ansible	gate	platform	gate	gate
+ansible-curate	ansible	gate	platform	gate	gate
 ansible-mongodb	ansible	gate	platform	none	gate
 ansible-nats	ansible	gate	platform	none	gate
 ansible-prometheus	ansible	gate	platform	none	gate
