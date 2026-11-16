@@ -1,0 +1,115 @@
+name: reusable-ansible-wiring
+# Assembles the deploy repo with every penwern.* role at main (the caller's own repo
+# swapped in at the PR head), then proves the playbooks still parse and that every tag
+# the deploy docs and scripts name exists. No hosts are contacted and nothing is decrypted.
+on:
+  workflow_call:
+    secrets:
+      PENWERN_CI_APP_CLIENT_ID:
+        required: true
+      PENWERN_CI_APP_PRIVATE_KEY:
+        required: true
+
+permissions:
+  contents: read
+
+env:
+  DEPLOY_REPO: curate-ansible-deployment
+  # Role repos are penwern/ansible-<name>, installed as roles/penwern.<name>.
+  ROLE_NAMES: cells curate nats mongodb minio prometheus grafana
+
+jobs:
+  wiring:
+    # Opted-in callers run on CamPC with no hosted fallback (a hosted probe cost more
+    # than it saved); Dependabot stays hosted so new third-party code never runs there.
+    runs-on: ${{ (vars.CI_RUNNER == 'campc' && github.actor != 'dependabot[bot]' && !startsWith(github.head_ref, 'dependabot/')) && 'campc' || 'ubuntu-latest' }}
+    timeout-minutes: 15
+    steps:
+      - name: Checkout caller repo
+        uses: actions/checkout@v7
+        with:
+          path: target
+
+      # One token for penwern-ci, the deploy repo and the 7 role repos (all private).
+      - name: Mint read token
+        id: app_token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.PENWERN_CI_APP_CLIENT_ID }}
+          private-key: ${{ secrets.PENWERN_CI_APP_PRIVATE_KEY }}
+          owner: penwern
+          repositories: |
+            penwern-ci
+            curate-ansible-deployment
+            ansible-cells
+            ansible-curate
+            ansible-nats
+            ansible-mongodb
+            ansible-minio
+            ansible-prometheus
+            ansible-grafana
+          permission-contents: read
+
+      - name: Checkout penwern-ci
+        uses: actions/checkout@v7
+        with:
+          repository: penwern/penwern-ci
+          ref: v1
+          path: penwern-ci
+          token: ${{ steps.app_token.outputs.token }}
+
+      - name: Read pinned tool versions
+        run: cat penwern-ci/configs/tool-versions.env >> "$GITHUB_ENV"
+
+      - name: Assemble deploy repo and roles
+        env:
+          GH_TOKEN: ${{ steps.app_token.outputs.token }}
+        run: |
+          set -euo pipefail
+          caller="${GITHUB_REPOSITORY##*/}"
+          auth="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          echo "::add-mask::$auth"
+          clone() { git -c "http.extraheader=Authorization: Basic $auth" clone --quiet --depth 1 --branch main "https://github.com/penwern/$1.git" "$2"; }
+          if [ "$caller" = "$DEPLOY_REPO" ]; then
+            ln -s target deploy
+          else
+            clone "$DEPLOY_REPO" deploy
+          fi
+          mkdir -p deploy/roles
+          for n in $ROLE_NAMES; do
+            if [ "$caller" = "ansible-$n" ]; then
+              ln -s "$GITHUB_WORKSPACE/target" "deploy/roles/penwern.$n"
+            else
+              clone "ansible-$n" "deploy/roles/penwern.$n"
+            fi
+          done
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Install ansible-core and the deploy repo's galaxy dependencies
+        working-directory: deploy
+        run: |
+          pip install "ansible-core==${ANSIBLE_CORE_VERSION}"
+          ansible-galaxy role install -r requirements.yml -p roles
+          ansible-galaxy collection install -r requirements.yml
+
+      # ansible.cfg names a vault password file, and ansible-playbook refuses to start
+      # if that file is missing. Nothing is decrypted here: group_vars and host_vars stay
+      # encrypted because --syntax-check and --list-tags load no host variables, so a
+      # throwaway password is enough. Real secrets never reach this job.
+      - name: Provide a dummy vault password file (nothing is decrypted)
+        run: |
+          echo "not-a-real-password" > "$RUNNER_TEMP/dummy-vault-pass"
+          echo "ANSIBLE_VAULT_PASSWORD_FILE=$RUNNER_TEMP/dummy-vault-pass" >> "$GITHUB_ENV"
+
+      - name: Syntax-check the playbooks
+        working-directory: deploy
+        run: |
+          ansible-playbook curate.yml --syntax-check
+          ansible-playbook monitoring.yml --syntax-check
+
+      - name: Check documented tags exist
+        run: bash penwern-ci/scripts/check-ansible-tags.sh "$GITHUB_WORKSPACE/deploy"

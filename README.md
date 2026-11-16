@@ -62,6 +62,7 @@ skipped).
 | `go` | `go test -race -cover -count=1 ./...` |
 | `python` | `pytest -m "not integration" --cov` |
 | `js-vanilla` / `js-next` | `npm test` |
+| `ansible` | `python -m pytest -q -n auto tests` (ansible-core, pytest, pytest-xdist, pyyaml pinned; plus `tests/requirements.txt` and `tests/requirements.yml` when present) |
 
 `go vet` is deliberately not repeated here: `govet` is already enabled in the central lint
 gate. The race detector is the hardening this tier adds over a plain `go test`.
@@ -72,13 +73,28 @@ live tier is a separate workflow (below).
 Python repos with a `uv.lock` at the root are installed with `uv sync --frozen` (uv pinned as
 `UV_VERSION`); all others keep the pip + requirements.txt install.
 
-**`test-mode=none` is a deliberate verdict, not a backlog entry.** The ansible role repos,
-`curate-ansible-deployment` and `aws-manager` are config-management and IaC: their correctness
-is a property of a converged host or a plan against real cloud state, neither of which a unit
-test reaches. yamllint plus ansible-lint (and `terraform fmt` plus `trivy config`) are the
-right instruments for them and are already enforced. Do not read those rows as work outstanding.
-The rows that *are* outstanding are the ones with a testable surface and no suite yet:
+**`test-mode=none` is a deliberate verdict, not a backlog entry.** `aws-manager` is IaC: its
+correctness is a plan against real cloud state, which a unit test does not reach. yamllint plus
+ansible-lint (and `terraform fmt` plus `trivy config`) are the right instruments for it. The
+`penwern.*` role repos with a hermetic `tests/` suite (`ansible-curate`, `ansible-cells`) run it
+here; the other role repos and `curate-ansible-deployment` stay `none` until they have one.
+The rows still outstanding are the ones with a testable surface and no suite yet:
 `curate-dev-js` and `penwern-website`.
+
+## Ansible wiring check
+
+`reusable-ansible-wiring.yml` (no `language:` input) is called by `curate-ansible-deployment` and
+all 7 `ansible-*` role repos. It assembles the deploy repo and every `penwern.*` role at `main`
+(the caller's own repo is used at the PR head instead), installs the galaxy roles and collections
+from the deploy repo's `requirements.yml`, runs `ansible-playbook --syntax-check` on `curate.yml`
+and `monitoring.yml`, then runs `scripts/check-ansible-tags.sh`: every tag named after `--tags`,
+`--skip-tags` or `-t` in the deploy repo's `scripts/*.sh`, `README.md` and `CLAUDE.md` must appear
+in `--list-tags`. Empty scope (no documented or no playbook tags) fails. `ansible.cfg` names a
+vault password file that must exist for ansible to start, so the job writes a dummy one; no
+vault data is decrypted because syntax-check and list-tags load no host variables. Blind spot:
+`--list-tags` is static, so a tag set only inside a file loaded by `include_tasks` is invisible
+unless the include itself carries it. The App token needs read access to `penwern-ci`, the deploy
+repo and the 7 role repos.
 
 ## Live-Cells e2e tier
 
