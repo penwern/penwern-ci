@@ -28,11 +28,13 @@ cat "$work"/list.* | grep -E 'TAGS: \[' | sed -E 's/.*TAGS: \[(.*)\].*/\1/' | tr
 # Tags the docs name. -t is only read on lines that run a playbook, so shell tests like [[ -t 0 ]] are ignored.
 files=""
 for f in scripts/*.sh README.md CLAUDE.md; do [ -f "$f" ] && files="$files $f"; done
+# Join backslash continuations first, so `--tags \` with the tag on the next line is read.
 # shellcheck disable=SC2086
+awk 1 $files 2>/dev/null | sed -e ':a' -e '/\\$/{N;s/\\\n//;ba' -e '}' > "$work/docs"
 {
-  grep -hoE -- '(--tags|--skip-tags)([= ]+)("[^"]*"|'"'"'[^'"'"']*'"'"'|[^[:space:]]+)' $files
-  grep -hE 'ansible-playbook|deploy\.sh' $files | grep -hoE -- '(^|[[:space:]])-t[[:space:]]+("[^"]*"|'"'"'[^'"'"']*'"'"'|[^[:space:]]+)'
-} 2>/dev/null | sed -E 's/^[[:space:]]*(--tags|--skip-tags|-t)[= ]+//' | tr -d "\"'\`" \
+  grep -hoE -- '(--tags|--skip-tags)([=[:space:]]+)("[^"]*"|'"'"'[^'"'"']*'"'"'|[^[:space:]]+)' "$work/docs"
+  grep -hE 'ansible-playbook|deploy\.sh' "$work/docs" | grep -hoE -- '(^|[[:space:]])-t[[:space:]]+("[^"]*"|'"'"'[^'"'"']*'"'"'|[^[:space:]]+)'
+} 2>/dev/null | sed -E 's/^[[:space:]]*(--tags|--skip-tags|-t)[=[:space:]]+//' | tr -d "\"'\`" \
   | tr ',' '\n' | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//; s/[.;:)]+$//' | grep -v '^$' | sort -u > "$work/raw"
 
 # Placeholders and shell syntax are not tags.

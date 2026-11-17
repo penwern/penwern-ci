@@ -38,6 +38,16 @@ out="$(_ctrun)"; ec=$?
 assert_exit "$ec" 1 "check-ansible-tags: dotted tag is checked"
 assert_contains "$out" "missing.tag" "check-ansible-tags: names the dotted tag"
 
+printf 'ansible-playbook curate.yml --tags \\\n  missing\n' > "$_ct/repo/README.md"
+out="$(_ctrun)"; ec=$?
+assert_exit "$ec" 1 "check-ansible-tags: continued tag argument is read"
+assert_contains "$out" "tag not in any playbook: missing" "check-ansible-tags: names the continued tag"
+
+printf 'ansible-playbook curate.yml --tags\tmissing\nansible-playbook curate.yml -t\tmissing2\n' > "$_ct/repo/README.md"
+out="$(_ctrun)"; ec=$?
+assert_exit "$ec" 1 "check-ansible-tags: tab-separated tags are read"
+assert_contains "$out" "tag not in any playbook: missing2" "check-ansible-tags: names the tab-separated -t tag"
+
 printf 'ansible-playbook curate.yml --tags infra.\n' > "$_ct/repo/README.md"
 out="$(_ctrun)"; ec=$?
 assert_exit "$ec" 0 "check-ansible-tags: sentence-ending dot is stripped"
