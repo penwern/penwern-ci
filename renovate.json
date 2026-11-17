@@ -168,6 +168,39 @@
       ],
       "datasourceTemplate": "pypi",
       "depNameTemplate": "uv"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^configs/tool-versions\\.env$/"
+      ],
+      "matchStrings": [
+        "(?:^|\\n)ANSIBLE_CORE_VERSION=(?<currentValue>\\S+)"
+      ],
+      "datasourceTemplate": "pypi",
+      "depNameTemplate": "ansible-core"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^configs/tool-versions\\.env$/"
+      ],
+      "matchStrings": [
+        "(?:^|\\n)PYTEST_XDIST_VERSION=(?<currentValue>\\S+)"
+      ],
+      "datasourceTemplate": "pypi",
+      "depNameTemplate": "pytest-xdist"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^configs/tool-versions\\.env$/"
+      ],
+      "matchStrings": [
+        "(?:^|\\n)PYYAML_VERSION=(?<currentValue>\\S+)"
+      ],
+      "datasourceTemplate": "pypi",
+      "depNameTemplate": "pyyaml"
     }
   ],
   "packageRules": [
@@ -181,6 +214,13 @@
         "patch"
       ],
       "groupName": "CI tool versions"
+    },
+    {
+      "description": "ansible-core stays on the line the deploy repo and role tests run (2.20.x); moving it is a deliberate fleet decision",
+      "matchDepNames": [
+        "ansible-core"
+      ],
+      "allowedVersions": "/^2\\.20\\./"
     }
   ]
 }

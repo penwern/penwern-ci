@@ -35,6 +35,8 @@ run_tests() {
     # and cached passes would skip re-running unchanged packages under -race.
     go)     ( cd "$root" && go test -race -cover -count=1 ./... ) ;;
     js-*|js) ( cd "$root" && npm test ) ;;
+    # Role repos: the tests need no hosts or secrets; -n auto matches the cross-repo contract.
+    ansible) ( cd "$root" && python -m pytest -q -n auto tests ) ;;
     *)      log "INFRA: unsupported language '$lang' for tests"; exit 2 ;;
   esac
 }

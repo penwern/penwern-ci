@@ -55,11 +55,11 @@ jobs:
           cache: false
 
       - name: Set up Python
-        if: inputs.language == 'python'
+        if: inputs.language == 'python' || inputs.language == 'ansible'
         uses: actions/setup-python@v7
         with:
           python-version: '3.12'
-          cache: ${{ runner.environment == 'github-hosted' && 'pip' || '' }}
+          cache: ${{ runner.environment == 'github-hosted' && inputs.language == 'python' && 'pip' || '' }}
 
       - name: Set up uv
         if: inputs.language == 'python' && hashFiles('target/uv.lock') != ''
@@ -94,6 +94,17 @@ jobs:
           else
             pip install "pytest==${PYTEST_VERSION}" "pytest-cov==${PYTEST_COV_VERSION}"
           fi
+
+      # Role repos: the tests parse roles and defaults only, so they need no hosts, vault or secrets.
+      - name: Install Ansible test deps
+        if: inputs.language == 'ansible'
+        working-directory: target
+        run: |
+          python -m pip install --upgrade pip
+          pip install "ansible-core==${ANSIBLE_CORE_VERSION}" "pytest==${PYTEST_VERSION}" \
+            "pytest-xdist==${PYTEST_XDIST_VERSION}" "pyyaml==${PYYAML_VERSION}"
+          if [ -f tests/requirements.txt ]; then pip install -r tests/requirements.txt; fi
+          if [ -f tests/requirements.yml ]; then ansible-galaxy collection install -r tests/requirements.yml; fi
 
       - name: Set up Node
         if: startsWith(inputs.language, 'js-')
