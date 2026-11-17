@@ -231,8 +231,8 @@ major tag. penwern-ci itself carries the `github-actions` updater for the shared
 | curate-dev-js | js-vanilla | gate | none | gate | platform |
 | penwern-website | js-next | gate | none | gate | platform |
 | curate-ansible-deployment | ansible | gate | none | gate | platform |
-| ansible-cells | ansible | gate | none | gate | platform |
-| ansible-curate | ansible | gate | none | gate | platform |
+| ansible-cells | ansible | gate | gate | gate | platform |
+| ansible-curate | ansible | gate | gate | gate | platform |
 | ansible-mongodb | ansible | gate | none | gate | platform |
 | ansible-nats | ansible | gate | none | gate | platform |
 | ansible-prometheus | ansible | gate | none | gate | platform |
