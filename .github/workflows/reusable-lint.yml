@@ -5,6 +5,11 @@ on:
       language:
         required: true
         type: string
+      runner:
+        # GitHub-hosted label used off campc; a repo pins one when ubuntu-latest breaks it
+        required: false
+        type: string
+        default: ubuntu-latest
     secrets:
       PENWERN_CI_APP_CLIENT_ID:
         required: true
@@ -18,7 +23,7 @@ jobs:
   lint:
     # Opted-in callers run on CamPC with no hosted fallback (a hosted probe cost more
     # than it saved); Dependabot stays hosted so new third-party code never runs there.
-    runs-on: ${{ (vars.CI_RUNNER == 'campc' && github.actor != 'dependabot[bot]' && !startsWith(github.head_ref, 'dependabot/')) && 'campc' || 'ubuntu-latest' }}
+    runs-on: ${{ (vars.CI_RUNNER == 'campc' && github.actor != 'dependabot[bot]' && !startsWith(github.head_ref, 'dependabot/')) && 'campc' || inputs.runner }}
     timeout-minutes: 15
     steps:
       - name: Checkout caller repo

@@ -182,7 +182,8 @@ jobs on the self-hosted runner labelled `campc`. Without the variable nothing ch
 minutes are used.
 
 - When opted in, jobs go straight to `campc` with no hosted fallback: if CamPC is off they queue until it is back. To run on hosted runners instead, unset the variable or set it to anything else. (A hosted probe used to pick the runner, but its one billed minute per call cost more than CamPC saved.)
-- Dependabot runs (actor `dependabot[bot]` or a `dependabot/` branch) always stay on `ubuntu-latest`, so new third-party code never runs on CamPC.
+- Dependabot runs (actor `dependabot[bot]` or a `dependabot/` branch) always stay on a hosted runner, so new third-party code never runs on CamPC.
+- Hosted jobs use `ubuntu-latest` unless the caller passes `runner:` (lint, test and security), e.g. `runner: ubuntu-24.04` when a newer image breaks the repo's build.
 - The runner needs a Docker-compatible API for the e2e tier (CamPC uses rootless Podman via `DOCKER_HOST`).
 - CamPC keeps its caches on local disk per slot (toolchains, Go build, golangci-lint, pip, uv), wiped by the slot loop at most once a day (checked between jobs, so an idle slot keeps its cache until its next job). The reusables use the GitHub Actions cache only on hosted runners (`runner.environment == 'github-hosted'`): from CamPC, restoring and saving it was slower than building cold.
 
