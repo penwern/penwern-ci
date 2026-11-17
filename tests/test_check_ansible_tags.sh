@@ -27,3 +27,26 @@ assert_exit "$ec" 2 "check-ansible-tags: zero documented tags fails"
 printf 'ansible-playbook curate.yml --tags infra\n' > "$_ct/repo/README.md"
 out="$(STUB_TAGS=none _ctrun)"; ec=$?
 assert_exit "$ec" 2 "check-ansible-tags: zero playbook tags fails"
+
+printf 'ansible-playbook curate.yml --tags "infra, missing"\n' > "$_ct/repo/README.md"
+out="$(_ctrun)"; ec=$?
+assert_exit "$ec" 1 "check-ansible-tags: quoted tags with spaces are read"
+assert_contains "$out" "tag not in any playbook: missing" "check-ansible-tags: names tag after quoted space"
+
+printf 'ansible-playbook curate.yml --tags infra,missing.tag\n' > "$_ct/repo/README.md"
+out="$(_ctrun)"; ec=$?
+assert_exit "$ec" 1 "check-ansible-tags: dotted tag is checked"
+assert_contains "$out" "missing.tag" "check-ansible-tags: names the dotted tag"
+
+printf 'ansible-playbook curate.yml --tags infra.\n' > "$_ct/repo/README.md"
+out="$(_ctrun)"; ec=$?
+assert_exit "$ec" 0 "check-ansible-tags: sentence-ending dot is stripped"
+
+printf 'ansible-playbook curate.yml --tags infra\n' > "$_ct/repo/README.md"
+cat > "$_ct/bin/ansible-playbook" <<'STUB'
+#!/usr/bin/env bash
+[ "$1" = "monitoring.yml" ] && { echo "boom" >&2; exit 1; }
+echo "      TASK TAGS: [infra]"
+STUB
+out="$(_ctrun)"; ec=$?
+assert_exit "$ec" 2 "check-ansible-tags: one failed listing exits 2"

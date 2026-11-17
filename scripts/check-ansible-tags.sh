@@ -18,10 +18,11 @@ playbooks="curate.yml monitoring.yml"
 work="$(mktemp -d)"; trap 'rm -rf "$work"' EXIT
 
 # Tags the playbooks define. 'TAGS: [a, b]' lines cover play-level and task-level tags.
+# Listed to files, not piped, so a failed listing exits the script rather than a subshell.
 for pb in $playbooks; do
-  out="$(ansible-playbook "$pb" --list-tags 2>&1)" || { echo "$out" >&2; die "ansible-playbook --list-tags failed for $pb" 2; }
-  printf '%s\n' "$out" | grep -E 'TAGS: \[' | sed -E 's/.*TAGS: \[(.*)\].*/\1/' | tr ',' '\n'
-done | tr -d ' ' | grep -v '^$' | sort -u > "$work/defined"
+  ansible-playbook "$pb" --list-tags > "$work/list.$pb" 2>&1 || { cat "$work/list.$pb" >&2; die "ansible-playbook --list-tags failed for $pb" 2; }
+done
+cat "$work"/list.* | grep -E 'TAGS: \[' | sed -E 's/.*TAGS: \[(.*)\].*/\1/' | tr ',' '\n' | tr -d ' ' | grep -v '^$' | sort -u > "$work/defined"
 [ -s "$work/defined" ] || die "no tags reported by --list-tags for: $playbooks" 2
 
 # Tags the docs name. -t is only read on lines that run a playbook, so shell tests like [[ -t 0 ]] are ignored.
@@ -29,14 +30,14 @@ files=""
 for f in scripts/*.sh README.md CLAUDE.md; do [ -f "$f" ] && files="$files $f"; done
 # shellcheck disable=SC2086
 {
-  grep -hoE -- '(--tags|--skip-tags)([= ]+)[^[:space:]]+' $files
-  grep -hE 'ansible-playbook|deploy\.sh' $files | grep -hoE -- '(^|[[:space:]])-t[[:space:]]+[^[:space:]]+'
+  grep -hoE -- '(--tags|--skip-tags)([= ]+)("[^"]*"|'"'"'[^'"'"']*'"'"'|[^[:space:]]+)' $files
+  grep -hE 'ansible-playbook|deploy\.sh' $files | grep -hoE -- '(^|[[:space:]])-t[[:space:]]+("[^"]*"|'"'"'[^'"'"']*'"'"'|[^[:space:]]+)'
 } 2>/dev/null | sed -E 's/^[[:space:]]*(--tags|--skip-tags|-t)[= ]+//' | tr -d "\"'\`" \
-  | sed -E 's/[.;:)]+$//' | tr ',' '\n' | grep -v '^$' | sort -u > "$work/raw"
+  | tr ',' '\n' | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//; s/[.;:)]+$//' | grep -v '^$' | sort -u > "$work/raw"
 
 # Placeholders and shell syntax are not tags.
-grep -E '^[A-Za-z0-9_-]+$' "$work/raw" > "$work/documented"
-grep -vE '^[A-Za-z0-9_-]+$' "$work/raw" | sed 's/^/[penwern-ci] ignoring non-tag token: /' >&2
+grep -E '^[A-Za-z0-9_][A-Za-z0-9_.-]*$' "$work/raw" > "$work/documented"
+grep -vE '^[A-Za-z0-9_][A-Za-z0-9_.-]*$' "$work/raw" | sed 's/^/[penwern-ci] ignoring non-tag token: /' >&2
 [ -s "$work/documented" ] || die "no documented tags found in: $files" 2
 
 # all/tagged/untagged/never are Ansible's own selectors.

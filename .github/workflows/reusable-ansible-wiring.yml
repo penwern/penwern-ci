@@ -70,6 +70,7 @@ jobs:
           auth="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
           echo "::add-mask::$auth"
           clone() { git -c "http.extraheader=Authorization: Basic $auth" clone --quiet --depth 1 --branch main "https://github.com/penwern/$1.git" "$2"; }
+          rm -rf deploy
           if [ "$caller" = "$DEPLOY_REPO" ]; then
             ln -s target deploy
           else
