@@ -16,7 +16,7 @@ permissions:
 env:
   DEPLOY_REPO: curate-ansible-deployment
   # Role repos are penwern/ansible-<name>, installed as roles/penwern.<name>.
-  ROLE_NAMES: cells curate nats mongodb minio prometheus grafana
+  ROLE_NAMES: cells curate nats mongodb minio grafana
 
 jobs:
   wiring:
@@ -30,7 +30,7 @@ jobs:
         with:
           path: target
 
-      # One token for penwern-ci, the deploy repo and the 7 role repos (all private).
+      # One token for penwern-ci, the deploy repo and the 6 role repos (all private).
       - name: Mint read token
         id: app_token
         uses: actions/create-github-app-token@v3
@@ -46,7 +46,6 @@ jobs:
             ansible-nats
             ansible-mongodb
             ansible-minio
-            ansible-prometheus
             ansible-grafana
           permission-contents: read
 
