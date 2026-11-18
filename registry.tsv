@@ -17,7 +17,6 @@ ansible-cells	ansible	gate	platform	gate	gate
 ansible-curate	ansible	gate	platform	gate	gate
 ansible-mongodb	ansible	gate	platform	none	gate
 ansible-nats	ansible	gate	platform	none	gate
-ansible-prometheus	ansible	gate	platform	none	gate
 ansible-grafana	ansible	gate	platform	none	gate
 ansible-minio	ansible	gate	platform	none	gate
 aws-manager	terraform	gate	platform	none	advisory

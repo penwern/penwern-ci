@@ -94,7 +94,7 @@ vault password file that must exist for ansible to start, so the job writes a du
 vault data is decrypted because syntax-check and list-tags load no host variables. Blind spot:
 `--list-tags` is static, so a tag set only inside a file loaded by `include_tasks` is invisible
 unless the include itself carries it. The App token needs read access to `penwern-ci`, the deploy
-repo and the 7 role repos.
+repo and the 6 role repos.
 
 ## Live-Cells e2e tier
 
@@ -236,7 +236,6 @@ major tag. penwern-ci itself carries the `github-actions` updater for the shared
 | ansible-curate | ansible | gate | gate | gate | platform |
 | ansible-mongodb | ansible | gate | none | gate | platform |
 | ansible-nats | ansible | gate | none | gate | platform |
-| ansible-prometheus | ansible | gate | none | gate | platform |
 | ansible-grafana | ansible | gate | none | gate | platform |
 | ansible-minio | ansible | gate | none | gate | platform |
 | aws-manager | terraform | gate | none | advisory | platform |
