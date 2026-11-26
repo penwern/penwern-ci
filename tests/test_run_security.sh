@@ -118,3 +118,9 @@ assert_contains "$(cat "$_palog2" 2>/dev/null)" "--disable-pip" "uv.lock takes p
 _palog3="$(mktmp)/pa3.log"
 ( STUB_PIP_AUDIT_LOG="$_palog3" _rs python "$_sec_py" >/tmp/rs18.out 2>&1 ); ec=$?
 assert_eq "$(cat "$_palog3" 2>/dev/null)" "-r requirements.txt" "no uv.lock: pip-audit -r requirements.txt unchanged"
+
+# gitleaks prints each finding as a redacted CSV report on stdout (rule, file, line).
+# Not -v: verbose prints composite-rule auxiliary secrets unredacted (gitleaks 8.30.1).
+_gllog="$(mktmp)/gl.log"
+( STUB_GITLEAKS_LOG="$_gllog" _rs go "$_sec_go" >/tmp/rs19.out 2>&1 ); ec=$?
+assert_eq "$(cat "$_gllog" 2>/dev/null)" "detect --no-git --no-banner --redact --report-format csv --report-path - --source ." "gitleaks: redacted CSV report to stdout, no -v"
