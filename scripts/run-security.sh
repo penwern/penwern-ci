@@ -45,8 +45,10 @@ classify() {
 # --- gitleaks: secret scanning over the working tree (ALL languages) ---
 # `detect --no-git` scans the checked-out files (not git history), which is what a
 # shallow CI checkout has. Exit: 0 = no leaks, 1 = leaks found, other = error.
+# The report on stdout prints only rule, file, line and fingerprint per finding. Not CSV
+# or -v: both print Match, and --redact masks only the captured group inside it.
 command -v gitleaks >/dev/null 2>&1 || die "gitleaks not on PATH (workflow must install at pinned version)" 2
-( cd "$root" && gitleaks detect --no-git --no-banner --redact --source . ); gl_rc=$?
+( cd "$root" && gitleaks detect --no-git --no-banner --redact --report-format template --report-template "$PENWERN_CI_ROOT/configs/gitleaks-findings.tmpl" --report-path - --source . ); gl_rc=$?
 classify gitleaks "$gl_rc" 0 1
 
 # --- per-language dependency vulnerability scan ---

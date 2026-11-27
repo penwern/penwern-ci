@@ -118,3 +118,9 @@ assert_contains "$(cat "$_palog2" 2>/dev/null)" "--disable-pip" "uv.lock takes p
 _palog3="$(mktmp)/pa3.log"
 ( STUB_PIP_AUDIT_LOG="$_palog3" _rs python "$_sec_py" >/tmp/rs18.out 2>&1 ); ec=$?
 assert_eq "$(cat "$_palog3" 2>/dev/null)" "-r requirements.txt" "no uv.lock: pip-audit -r requirements.txt unchanged"
+
+# gitleaks prints only rule, file, line and fingerprint per finding, via a fixed template.
+# Not CSV or -v: both print Match, and --redact masks only the captured group inside it.
+_gllog="$(mktmp)/gl.log"
+( STUB_GITLEAKS_LOG="$_gllog" _rs go "$_sec_go" >/tmp/rs19.out 2>&1 ); ec=$?
+assert_eq "$(cat "$_gllog" 2>/dev/null)" "detect --no-git --no-banner --redact --report-format template --report-template $PWD/configs/gitleaks-findings.tmpl --report-path - --source ." "gitleaks: location-only template report to stdout"
